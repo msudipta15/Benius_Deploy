@@ -1,0 +1,73 @@
+BENIUS — SUPER ADMIN SECURITY HARDENING
+
+MODE: DEVELOPMENT CODE IMPLEMENTATION ONLY
+
+I approve implementing the reviewed Super Admin security design.
+
+SCOPE:
+
+1. Implement a server-enforced 15-minute inactivity timeout using the existing last_seen_at field.
+
+2. Preserve the existing eight-hour absolute session expiry.
+
+3. Update session activity atomically, ensuring expired, revoked, or inactive-account sessions cannot be renewed.
+
+4. Ensure background polling does not extend inactivity time.
+
+5. Require fresh server-side session verification before displaying Super Admin data on initial entry, refresh, and browser history restoration.
+
+6. Prevent sensitive Super Admin data from being displayed from stale React Query caches.
+
+7. Add appropriate Cache-Control: private, no-store headers to Super Admin authentication and school-management responses.
+
+8. For normal in-app navigation away from the Super Admin area, revoke the session using the existing CSRF-protected logout endpoint before completing navigation.
+
+9. If logout fails, do not claim logout succeeded. Keep sensitive data hidden where appropriate and provide a retry option.
+
+10. Preserve explicit logout and server-side session revocation.
+
+11. For permanent school deletion, require Super Admin password re-entry and verify it server-side using Argon2id before deletion.
+
+12. Preserve existing CSRF protection and authorization for school-management operations.
+
+13. Never log or persist submitted plaintext passwords.
+
+14. Do not modify Principal, Teacher, or Student authentication.
+
+15. Preserve school/tenant isolation and Academic Session protections.
+
+TESTING:
+
+- Server-enforced idle and absolute expiry
+- Session revocation and inactive accounts
+- Login and logout
+- Normal in-app navigation away
+- Failed logout handling
+- Refresh without logout
+- Browser Back/Forward restoration
+- No sensitive cached-data exposure
+- Unauthorized school-management access
+- School deletion password verification and CSRF enforcement
+
+Run focused API/Web tests, builds, and git diff --check.
+
+IMPORTANT:
+If a requirement cannot be implemented safely, STOP and report the limitation instead of silently weakening it.
+
+STRICT RESTRICTIONS:
+
+- No database migrations or manual database changes.
+- Do not create or delete schools during testing.
+- No Production deployment.
+- No Mobile source changes.
+- No workflow restarts without separate approval.
+
+FINAL REPORT:
+
+- Files changed
+- Security behavior implemented
+- Test and build results
+- Remaining browser limitations
+- Whether an API restart is required
+
+STOP after implementation and wait for approval.

@@ -1,0 +1,97 @@
+BENIUS — FIX STUDENT REGISTRATION ARCHIVED-SESSION ERROR
+
+MODE: APPROVED TARGETED DEVELOPMENT CODE FIX
+
+ISSUE:
+Student Registration → Activate Your Account
+
+URL: /register
+
+Error:
+"Security Restriction: Write operations are strictly blocked for archived school years."
+
+CONFIRMED ROOT CAUSE:
+
+The following endpoints incorrectly receive and are checked against the global Academic Session header:
+
+POST /api/students/verify
+POST /api/students/activate
+
+These are Student identity verification and account-activation operations, not selected-session timetable or examination operations.
+
+IMPLEMENT:
+
+1. FRONTEND — queryClient.ts
+
+Add exact method-and-path exemptions for:
+
+- POST /api/students/verify
+- POST /api/students/activate
+
+Neither request should automatically attach x-view-session-id.
+
+2. BACKEND — routes.ts
+
+Add the same two exact method-and-path exemptions to the global checkSessionContext archived-session guard.
+
+Do not exempt any other Student endpoint.
+
+3. PRESERVE SECURITY
+
+Keep unchanged:
+
+- DSID, phone number and DOB verification.
+- Existing school/tenant identity resolution.
+- Password validation and hashing.
+- Already-activated account rejection.
+- Identity re-verification during activation.
+- Existing enrollmentDate update behavior.
+- Academic Session restrictions for all other Student operations.
+
+Do not create or modify academic enrollment mappings.
+
+4. REGRESSION TESTS
+
+Verify:
+
+- Both exact frontend requests omit x-view-session-id.
+- Both exact backend routes bypass only the archived-session guard.
+- Requests are not blocked by a stale or archived selected-session header.
+- Invalid identity details are rejected.
+- Invalid password inputs are rejected.
+- Already-activated accounts cannot activate again.
+- Other archived-session academic writes remain blocked.
+- No cross-school account activation is possible through browser-supplied school identifiers.
+- Other HTTP methods and similarly named routes remain protected.
+
+Use isolated test fixtures. Do not activate real Development student accounts during testing.
+
+5. VALIDATION
+
+Run:
+- Focused API tests.
+- Focused Web tests.
+- Relevant API and Web builds.
+- git diff --check.
+
+STRICT RESTRICTIONS:
+
+- Development code only.
+- No database migrations.
+- No manual database changes.
+- No Production or Mobile changes.
+- No changes to Principal or Teacher password routes.
+- No Timetable Master changes.
+- No workflow restarts without separate approval.
+
+FINAL REPORT:
+
+1. Files changed.
+2. Exact implementation.
+3. Security protections preserved.
+4. Test results.
+5. Build results.
+6. Any remaining risks.
+7. Whether Development API restart is required.
+
+STOP after implementation and verification. Wait for restart approval.

@@ -1,0 +1,33 @@
+- [BENIUS database preservation](benius-database-preservation.md) — avoid force-pushing the inherited schema when Drizzle proposes truncating populated tables.
+- [Fees Support Staff permissions](fees-support-staff-permissions.md) — bulk generation inherits Fee Structures; preserve other Admin-only boundaries and legacy mapping.
+- [BENIUS Web-first development](benius-web-first-development.md) — prioritize Web and required backend work; keep Mobile feature work frozen until explicitly requested.
+- [Native mobile auth boundary](native-mobile-auth-boundary.md) — keep mobile bearer auth separate from web cookies; browser preview is not a sign-in client.
+- [Student content boundaries](student-content-boundaries.md) — historical cohort controls session reads; new Student uploads need owner/reviewer-gated downloads.
+- [Reply-aware Student Complaint alerts](student-complaint-reply-aware-alerts.md) — Complaints dot must track unread Teacher-to-Student items and newer visible Teacher/Admin replies, never Student replies.
+- [Current Student placement](current-student-placement.md) — authorized Web Registry Add or placement-changing Edit synchronizes only the active-session enrollment; preserve history.
+- [Forward-only session activation](forward-only-session-activation.md) — normal activation advances only to the immediate next unambiguous chronological Draft session; historical recovery stays separate.
+- [Web promotion proposals and Mobile isolation](web-promotion-proposals-mobile-isolation.md) — keep new Web proposals in audit events, not the shared raw override table consumed by Mobile.
+- [Expo preview font loading](expo-preview-font-loading.md) — keep optional custom fonts from blocking the first visible Expo screen.
+- [API TypeScript test runner](api-server-test-runner.md) — bundle API tests as CommonJS with esbuild before Node’s test runner.
+- [Student result calculation boundaries](student-result-calculation-boundaries.md) — historical result access does not imply historical policy snapshots or a new journey formula.
+- [Web marks visibility and locked ledgers](examination-marks-visibility-and-locks.md) — publish only newly saved Web rows; reject edits that could change an exact locked decision.
+- [Student attendance population](student-attendance-population.md) — selected-session active enrollment defines eligibility; unmarked Students are Not Marked and excluded from the percentage denominator.
+- [Notice session null semantics](notice-session-null-semantics.md) — unassigned legacy notices are not automatically global across school years.
+- [Teacher Noticeboard session routing](teacher-noticeboard-session-routing.md) — keep Teacher content session-scoped while the legacy Dashboard badge returns IDs only.
+- [TypeScript diagnostic baselines](typescript-diagnostic-baselines.md) — an empty LSP snapshot does not prove package typechecks are clean.
+- [Teacher Timetable session routing](teacher-timetable-session-routing.md) — enforce Teacher session rules without changing shared Admin/Student fallback behavior.
+- [Teacher Complaint session boundaries](teacher-complaint-session-boundaries.md) — exact selected-session reads; active-session writes; NULL legacy complaints remain unassigned.
+- [Teacher Leave session boundaries](teacher-leave-session-boundaries.md) — keep Teacher requests session-scoped while policies and renewal-period balances remain global/current.
+- [Teacher Dashboard session boundaries](teacher-dashboard-session-boundaries.md) — badges follow the selected session; the current-day Attendance status follows the active session.
+- [Teacher profile photo review](teacher-profile-photo-review.md) — photo-only review must not rewrite full-profile verification state or its approval history.
+- [Shared Support Staff academic-session foundation](support-staff-academic-session-foundation.md) — Support Staff may select sessions for granted modules but cannot use School Setup or manage sessions.
+- [Support Staff permissions and audit](support-staff-parent-only-modules.md) — registry mutations require parent plus exact actions; Web Teacher Delete snapshots then hard-deletes under existing FK behavior.
+- [Support Staff Admin Profile boundary](support-staff-admin-profile-boundary.md) — keep Principal/Admin profile and account controls unavailable to Support Staff while retaining their own header identity and logout.
+- [Support Staff scoped permissions](support-staff-scoped-permissions.md) — Approval/Leave children authorize independently; history is read-only; legacy Staff-management grants never authorize.
+- [Support Staff dashboard shell](support-staff-dashboard-shell.md) — omit the full summary bar; Removed History is read-only Teacher Registry base access inside the shell.
+- [Homework review timestamp precision](homework-review-timestamp-precision.md) — preserve PostgreSQL sub-millisecond precision in optimistic review tokens; JavaScript Date round-trips only milliseconds.
+- [Historical fee placement](historical-fee-placement.md) — approved fee lists and exports use exact-session enrollment; unresolved placement is explicit and mismatches are warned, never repaired.
+- [Disposable fee-test PostgreSQL](isolated-fee-postgres.md) — verify private cluster settings without elevating the test role; keep local startup and checks in one shell execution.
+- [Ledger PDF image validation](ledger-pdf-logo-validation.md) — Sharp may tolerate truncated images; validate PNG/JPEG structure before passing stored logos to PDFKit.
+- [PostgreSQL ID array binding](drizzle-postgres-array-bindings.md) — use one bound array parameter with `ANY`/`ALL`; direct Drizzle array interpolation expands into a row constructor.
+- [Super Admin bootstrap boundary](super-admin-bootstrap-boundary.md) — Super Admin accounts are manually provisioned with Argon2id hashes; never add public registration.

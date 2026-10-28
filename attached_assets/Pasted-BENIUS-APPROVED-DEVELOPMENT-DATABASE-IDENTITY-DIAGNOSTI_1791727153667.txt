@@ -1,0 +1,46 @@
+BENIUS — APPROVED DEVELOPMENT DATABASE IDENTITY DIAGNOSTIC
+
+I approve a temporary, Development-only API diagnostic and ONE Development API restart, strictly for verifying database identity.
+
+SCOPE:
+
+1. Add a temporary diagnostic that uses the running Development API's existing PostgreSQL connection.
+
+2. Restrict the diagnostic to Development only. It must not be publicly accessible or usable by ordinary Principal, Teacher, Student, or unauthenticated accounts.
+
+3. Query only non-sensitive PostgreSQL database identity metadata using SELECT-only operations.
+
+4. Do not query student, promotion, academic history, or other business records at this stage.
+
+5. Do not print DATABASE_URL, credentials, tokens, connection strings, or sensitive data.
+
+6. Use an authorized internal diagnostic mechanism, not a new public API endpoint.
+
+7. Build and validate the diagnostic before restarting.
+
+8. Restart ONLY the Development API workflow once to load it.
+
+9. Keep startup maintenance, reminders, and overdue-processing jobs disabled.
+
+10. Verify API startup and HTTP 200 health response.
+
+11. Compare the API database identity with the managed Development SQL Console using read-only metadata queries.
+
+12. Account for database proxies or pooling. Do not declare a match based only on database name or username.
+
+13. Report VERIFIED SAME DATABASE, VERIFIED DIFFERENT DATABASE, or INCONCLUSIVE, with supporting non-sensitive evidence.
+
+STRICT RESTRICTIONS:
+
+- No database writes or migrations.
+- No Student or promotion-record queries yet.
+- No Production or Mobile changes.
+- No Academic Session activation or deletion.
+- No promotion execution or corrections.
+- No changes to existing examination business logic.
+- No additional workflow restarts.
+- Do not leave an externally accessible diagnostic endpoint.
+
+STOP after database identity verification and report the result.
+
+Wait for separate approval before inspecting LLS-0003's historical promotion records or removing diagnostics if that requires another restart.

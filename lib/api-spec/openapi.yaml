@@ -1,0 +1,1035 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: student-homework
+    description: Student Homework actions
+  - name: teacher-homework-review
+    description: Teacher Homework review actions
+  - name: examination-results
+    description: Read-only Web examination results
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /admin/timetable/context:
+    get:
+      operationId: getAdminTimetableContext
+      tags: [admin-timetable]
+      summary: Get school metadata required by the Timetable Master
+      responses:
+        "200":
+          description: Timetable setup values for the authenticated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTimetableContext"
+        "403":
+          description: Admin access or the Support Staff Timetable Master grant is required
+  /admin/calendar/context:
+    get:
+      operationId: getAdminCalendarContext
+      tags: [admin-calendar]
+      summary: Get school metadata required by the School Calendar
+      responses:
+        "200":
+          description: Calendar targeting values for the authenticated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCalendarContext"
+        "403":
+          description: Admin access or the Support Staff School Calendar grant is required
+  /admin/attendance/context:
+    get:
+      operationId: getAdminAttendanceContext
+      tags: [admin-attendance]
+      summary: Get school and attendance policy values required by Attendance Overview
+      responses:
+        "200":
+          description: Attendance setup values for the authenticated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAttendanceContext"
+        "403":
+          description: Admin access or the Support Staff Attendance Overview grant is required
+  /admin/exam-controller/context:
+    get:
+      operationId: getAdminExamControllerContext
+      tags: [admin-exam-controller]
+      summary: Get school metadata required by the Exam Controller
+      responses:
+        "200":
+          description: Exam Controller setup values for the authenticated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminExamControllerContext"
+        "403":
+          description: Admin access or the Support Staff Exam Controller grant is required
+  /admin/noticeboard/context:
+    get:
+      operationId: getAdminNoticeboardContext
+      tags: [admin-noticeboard]
+      summary: Get school metadata required by the Noticeboard
+      responses:
+        "200":
+          description: Noticeboard targeting values for the authenticated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminNoticeboardContext"
+        "403":
+          description: Admin access or the Support Staff Noticeboard grant is required
+  /mobile/auth/teacher/change-password:
+    post:
+      operationId: mobileTeacherFirstLoginChangePassword
+      tags: [mobile-auth]
+      summary: Complete a teacher's required first-login password change
+      description: Uses a short-lived single-purpose challenge and returns no authenticated session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileTeacherFirstLoginPasswordChange"
+      responses:
+        "200":
+          description: Password changed; the teacher must sign in again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileTeacherFirstLoginPasswordChanged"
+        "400":
+          description: Invalid request or password confirmation.
+        "401":
+          description: Challenge expired or invalid.
+        "429":
+          description: Too many attempts.
+        "503":
+          description: Password change temporarily unavailable.
+  /student/module-dot-state:
+    get:
+      operationId: getStudentModuleDotState
+      tags: [student-notifications]
+      summary: Get the authenticated Student's module-dot state for the selected session
+      description: Requires an authenticated Student Web session. The session header is validated against the Student's school.
+      parameters:
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Activity state and latest visible cursors for the four supported Student modules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentModuleDotStateResponse"
+        "400":
+          description: A selected Academic Session is required or invalid
+        "401":
+          description: Student Web authentication is required
+        "403":
+          description: The selected session is not available to this Student
+  /student/module-dot-state/seen:
+    post:
+      operationId: markStudentModuleSeen
+      tags: [student-notifications]
+      summary: Persist the authenticated Student's observed activity cursor for one module
+      description: Requires an authenticated Student Web session. The Student and school are derived server-side; only visible activity in the selected session can be marked.
+      parameters:
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentModuleSeenInput"
+      responses:
+        "200":
+          description: The observed cursor was persisted, or was already superseded by a newer cursor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentModuleSeenResponse"
+        "400":
+          description: The module or activity cursor is invalid
+        "401":
+          description: Student Web authentication is required
+        "403":
+          description: The activity cursor is not visible to this Student in the selected session
+  /teacher/module-dot-state:
+    get:
+      operationId: getTeacherModuleDotState
+      tags: [teacher-notifications]
+      summary: Get the authenticated Teacher's module-dot state for the selected session
+      description: Requires an authenticated Teacher Web session. Teacher, school, and session ownership are validated server-side.
+      parameters:
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: New-activity state and latest visible cursors for the four supported Teacher modules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherModuleDotStateResponse"
+        "400":
+          description: A selected Academic Session is required or invalid
+        "401":
+          description: Teacher Web authentication is required
+        "403":
+          description: The selected session is not available to this Teacher
+  /teacher/module-dot-state/seen:
+    post:
+      operationId: markTeacherModuleSeen
+      tags: [teacher-notifications]
+      summary: Persist the authenticated Teacher's observed cursor for one module
+      description: Accepts only a cursor the Teacher can see in the selected session. Teacher and school are derived server-side.
+      parameters:
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherModuleSeenInput"
+      responses:
+        "200":
+          description: The cursor was persisted monotonically, or a newer cursor was already saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherModuleSeenResponse"
+        "400":
+          description: The module or activity cursor is invalid
+        "401":
+          description: Teacher Web authentication is required
+        "403":
+          description: The activity cursor is not visible to this Teacher in the selected session
+  /teacher/examination-results/{class}/{section}/{term}:
+    get:
+      operationId: getTeacherExaminationResults
+      tags: [examination-results]
+      summary: Calculate Teacher Results through the authoritative examination engine
+      description: Read-only. Teacher school and selected Academic Session are validated server-side; roster and marks are limited to the exact enrolled class and section.
+      parameters:
+        - in: path
+          name: class
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: path
+          name: section
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: path
+          name: term
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Calculated results for the exact selected-session cohort
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassExaminationResultsResponse"
+        "400":
+          description: Invalid or missing Academic Session or examination term
+        "401":
+          description: Teacher Web authentication is required
+        "403":
+          description: The selected session is unavailable to this Teacher
+        "409":
+          description: Examination, class-subject, or grading configuration is invalid
+  /admin/analytics/examination-results/{class}/{section}/{term}:
+    get:
+      operationId: getAdminExaminationResults
+      tags: [examination-results]
+      summary: Calculate Principal Results through the authoritative examination engine
+      description: Read-only. Requires Performance Analytics access and the explicit selected Academic Session; includes unpublished marks for the exact enrolled cohort.
+      parameters:
+        - in: path
+          name: class
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: path
+          name: section
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: path
+          name: term
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Calculated results for the exact selected-session cohort
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassExaminationResultsResponse"
+        "400":
+          description: Invalid or missing Academic Session or examination term
+        "401":
+          description: Admin Web authentication is required
+        "403":
+          description: Performance Analytics access or selected-session access is required
+        "409":
+          description: Examination, class-subject, or grading configuration is invalid
+  /student/exam/results:
+    get:
+      operationId: getStudentExaminationResults
+      tags: [examination-results]
+      summary: Calculate the authenticated Student's published Results
+      description: Student identity, school, and class/section are derived server-side from the exact selected-session Enrollment. Only published marks are included; the response excludes promotion recommendations and Principal decisions.
+      parameters:
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Published-only result data for the authenticated Student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentExaminationResultsResponse"
+        "400":
+          description: A selected Academic Session is required or invalid
+        "401":
+          description: Student Web authentication is required
+        "403":
+          description: The Student has no Enrollment in the selected session
+        "409":
+          description: Examination, class-subject, or grading configuration is invalid
+  /student/homework/{id}/view:
+    post:
+      operationId: recordStudentHomeworkView
+      tags: [student-homework]
+      summary: Record an explicit open of one Homework detail panel
+      description: The authenticated Student and school are derived server-side. The selected-session Enrollment must match the Homework class and section. Repeated opens are idempotent.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Whether this request created the Student's first view record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentHomeworkViewResult"
+        "400":
+          description: Homework ID or selected session is invalid
+        "401":
+          description: Student Web authentication is required
+        "403":
+          description: The Homework is outside the Student's selected-session Enrollment
+        "404":
+          description: Homework not found
+  /homework/{homeworkId}/submissions:
+    get:
+      operationId: getTeacherHomeworkSubmissions
+      tags: [teacher-homework-review]
+      summary: Get the authorized Student roster and submissions for one Homework
+      description: Teacher, school, selected session, and class/section assignment are validated server-side. Student attachment URLs and file paths are never returned.
+      parameters:
+        - in: path
+          name: homeworkId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      responses:
+        "200":
+          description: Student-wise review roster for the selected session
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeacherHomeworkReviewRosterEntry"
+        "400":
+          description: Homework ID or selected session is invalid
+        "401":
+          description: Teacher Web authentication is required
+        "403":
+          description: Teacher is not assigned to the selected-session class and section
+        "404":
+          description: Homework not found in the selected session
+  /homework/{homeworkId}/submissions/{submissionId}/review:
+    patch:
+      operationId: reviewTeacherHomeworkSubmission
+      tags: [teacher-homework-review]
+      summary: Approve a submission or request resubmission
+      description: Review writes require the active Academic Session and an authorized Teacher assignment. The full-precision submission token prevents a stale review from changing a newer resubmission.
+      parameters:
+        - in: path
+          name: homeworkId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: submissionId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: header
+          name: x-view-session-id
+          required: true
+          schema:
+            type: string
+            pattern: "^[1-9][0-9]*$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HomeworkReviewInput"
+      responses:
+        "200":
+          description: The review result without attachment URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeworkReviewResult"
+        "400":
+          description: Review action, timestamp, or optional comment is invalid
+        "401":
+          description: Teacher Web authentication is required
+        "403":
+          description: Teacher is not authorized to review this Student
+        "404":
+          description: Homework, submission, or selected-session enrollment not found
+        "409":
+          description: Submission changed, was already reviewed, or contains an attachment that cannot be securely reviewed yet
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    StudentModuleKey:
+      type: string
+      enum: [homework, classwork, noticeboard, complaints]
+    StudentModuleActivityCursor:
+      type: object
+      additionalProperties: false
+      properties:
+        createdAt:
+          type: string
+          description: Raw timestamp-without-time-zone text from the source event; used only as an ordering cursor.
+          maxLength: 26
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?$"
+        recordId:
+          type: integer
+          minimum: 1
+      required: [createdAt, recordId]
+    StudentModuleDotState:
+      type: object
+      additionalProperties: false
+      properties:
+        hasNewActivity:
+          type: boolean
+        latestActivityCursor:
+          oneOf:
+            - $ref: "#/components/schemas/StudentModuleActivityCursor"
+            - type: "null"
+      required: [hasNewActivity, latestActivityCursor]
+    StudentModuleDotStateResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        homework:
+          $ref: "#/components/schemas/StudentModuleDotState"
+        classwork:
+          $ref: "#/components/schemas/StudentModuleDotState"
+        noticeboard:
+          $ref: "#/components/schemas/StudentModuleDotState"
+        complaints:
+          $ref: "#/components/schemas/StudentModuleDotState"
+      required: [homework, classwork, noticeboard, complaints]
+    StudentModuleSeenInput:
+      type: object
+      additionalProperties: false
+      properties:
+        module:
+          $ref: "#/components/schemas/StudentModuleKey"
+        cursor:
+          $ref: "#/components/schemas/StudentModuleActivityCursor"
+      required: [module, cursor]
+    StudentModuleSeenResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        module:
+          $ref: "#/components/schemas/StudentModuleKey"
+        markedSeen:
+          type: boolean
+      required: [module, markedSeen]
+    TeacherModuleKey:
+      type: string
+      enum: [noticeboard, complaints, leave, approval_center]
+    TeacherModuleActivityCursor:
+      type: object
+      additionalProperties: false
+      properties:
+        createdAt:
+          type: string
+          description: Raw source timestamp text used only for deterministic activity ordering.
+          maxLength: 26
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?$"
+        source:
+          type: string
+          enum: [notice, peer_report, student_leave, student_profile_submission, student_profile_photo]
+        recordId:
+          type: integer
+          minimum: 1
+      required: [createdAt, source, recordId]
+    TeacherModuleDotState:
+      type: object
+      additionalProperties: false
+      properties:
+        hasNewActivity:
+          type: boolean
+        latestActivityCursor:
+          oneOf:
+            - $ref: "#/components/schemas/TeacherModuleActivityCursor"
+            - type: "null"
+      required: [hasNewActivity, latestActivityCursor]
+    TeacherModuleDotStateResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        noticeboard:
+          $ref: "#/components/schemas/TeacherModuleDotState"
+        complaints:
+          $ref: "#/components/schemas/TeacherModuleDotState"
+        leave:
+          $ref: "#/components/schemas/TeacherModuleDotState"
+        approval_center:
+          $ref: "#/components/schemas/TeacherModuleDotState"
+      required: [noticeboard, complaints, leave, approval_center]
+    TeacherModuleSeenInput:
+      type: object
+      additionalProperties: false
+      properties:
+        module:
+          $ref: "#/components/schemas/TeacherModuleKey"
+        cursor:
+          $ref: "#/components/schemas/TeacherModuleActivityCursor"
+      required: [module, cursor]
+    TeacherModuleSeenResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        module:
+          $ref: "#/components/schemas/TeacherModuleKey"
+        markedSeen:
+          type: boolean
+      required: [module, markedSeen]
+    AdminTimetableContext:
+      type: object
+      properties:
+        classes:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            type: string
+        subjects:
+          type: array
+          items:
+            type: string
+      required: [classes, sections, subjects]
+    AdminCalendarContext:
+      type: object
+      properties:
+        classes:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            type: string
+        classSections:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required: [classes, sections, classSections]
+    AdminAttendanceContext:
+      type: object
+      properties:
+        classes:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        attendanceTarget:
+          type: number
+      required: [classes, sections, subjects, attendanceTarget]
+    AdminExamControllerContext:
+      type: object
+      properties:
+        classes:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            type: string
+        exam_types:
+          type: array
+          items:
+            type: string
+      required: [classes, sections, exam_types]
+    AdminNoticeboardContext:
+      type: object
+      properties:
+        classes:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            type: string
+      required: [classes, sections]
+    MobileTeacherFirstLoginPasswordChange:
+      type: object
+      additionalProperties: false
+      properties:
+        challengeToken:
+          type: string
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+        confirmPassword:
+          type: string
+          minLength: 6
+      required: [challengeToken, currentPassword, newPassword, confirmPassword]
+    MobileTeacherFirstLoginPasswordChanged:
+      type: object
+      properties:
+        state:
+          type: string
+          const: password_changed
+      required: [state]
+    StudentHomeworkViewResult:
+      type: object
+      additionalProperties: false
+      properties:
+        recorded:
+          type: boolean
+      required: [recorded]
+    HomeworkReviewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        action:
+          type: string
+          enum: [approve, request_resubmission]
+        comment:
+          type: ["string", "null"]
+          maxLength: 2000
+        expectedSubmissionToken:
+          type: string
+          minLength: 26
+          maxLength: 26
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{6}$"
+      required: [action, expectedSubmissionToken]
+    HomeworkReviewSubmissionSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        reviewToken:
+          type: string
+          minLength: 26
+          maxLength: 26
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{6}$"
+        textAnswer:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        reviewedBy:
+          type: ["integer", "null"]
+        teacherComment:
+          type: ["string", "null"]
+        hasAttachment:
+          type: boolean
+      required:
+        - id
+        - status
+        - submittedAt
+        - reviewToken
+        - textAnswer
+        - reviewedAt
+        - reviewedBy
+        - teacherComment
+        - hasAttachment
+    TeacherHomeworkReviewRosterEntry:
+      type: object
+      additionalProperties: false
+      properties:
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        digitalStudentId:
+          type: string
+        className:
+          type: string
+        sectionName:
+          type: string
+        rollNumber:
+          type: ["integer", "null"]
+        viewed:
+          type: boolean
+        submission:
+          oneOf:
+            - $ref: "#/components/schemas/HomeworkReviewSubmissionSummary"
+            - type: "null"
+      required:
+        - studentId
+        - studentName
+        - digitalStudentId
+        - className
+        - sectionName
+        - rollNumber
+        - viewed
+        - submission
+    HomeworkReviewResult:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [approved, rejected]
+        submittedAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: integer
+        teacherComment:
+          type: ["string", "null"]
+      required: [id, status, submittedAt, reviewedAt, reviewedBy, teacherComment]
+    ExaminationResultStatus:
+      type: string
+      enum: [complete, incomplete]
+    ExaminationGrade:
+      type: object
+      additionalProperties: false
+      properties:
+        label:
+          type: string
+        remarks:
+          type: ["string", "null"]
+      required: [label, remarks]
+    ExaminationComponentResult:
+      type: object
+      additionalProperties: false
+      properties:
+        sourceExam:
+          type: string
+        weight:
+          type: number
+        marks:
+          type: ["number", "null"]
+        totalMarks:
+          type: ["number", "null"]
+        isAbsent:
+          type: boolean
+        pct:
+          type: ["number", "null"]
+        contribution:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [scored, absent, missing]
+      required: [sourceExam, weight, marks, totalMarks, isAbsent, pct, contribution, status]
+    ExaminationSubjectResult:
+      type: object
+      additionalProperties: false
+      properties:
+        subject:
+          type: string
+        percentage:
+          type: ["number", "null"]
+        passed:
+          type: ["boolean", "null"]
+        grade:
+          oneOf:
+            - $ref: "#/components/schemas/ExaminationGrade"
+            - type: "null"
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExaminationComponentResult"
+        status:
+          type: string
+          enum: [scored, absent, incomplete]
+      required: [subject, percentage, passed, grade, breakdown, status]
+    ExaminationResultRecord:
+      type: object
+      additionalProperties: false
+      properties:
+        schoolId:
+          type: integer
+        sessionId:
+          type: ["integer", "null"]
+        studentId:
+          type: integer
+        name:
+          type: string
+        digitalStudentId:
+          type: string
+        rollNumber:
+          type: ["integer", "null"]
+        termResults:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/ExaminationSubjectResult"
+        termAverages:
+          type: object
+          additionalProperties:
+            type: ["number", "null"]
+        termGrades:
+          type: object
+          additionalProperties:
+            oneOf:
+              - $ref: "#/components/schemas/ExaminationGrade"
+              - type: "null"
+        cumulativePercentage:
+          type: ["number", "null"]
+        cumulativeGrade:
+          oneOf:
+            - $ref: "#/components/schemas/ExaminationGrade"
+            - type: "null"
+        allTermFailCounts:
+          type: object
+          additionalProperties:
+            type: ["integer", "null"]
+        attendancePct:
+          type: ["number", "null"]
+        resultStatus:
+          $ref: "#/components/schemas/ExaminationResultStatus"
+        resultStatusByTerm:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ExaminationResultStatus"
+        promoted:
+          type: ["boolean", "null"]
+        promotionReason:
+          type: string
+        detentionViolations:
+          type: array
+          items:
+            type: string
+      required:
+        - schoolId
+        - sessionId
+        - studentId
+        - name
+        - digitalStudentId
+        - rollNumber
+        - termResults
+        - termAverages
+        - termGrades
+        - cumulativePercentage
+        - cumulativeGrade
+        - allTermFailCounts
+        - attendancePct
+        - resultStatus
+        - resultStatusByTerm
+        - promoted
+        - promotionReason
+        - detentionViolations
+    ClassExaminationResultsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        schoolId:
+          type: integer
+        sessionId:
+          type: integer
+        className:
+          type: string
+        sectionName:
+          type: string
+        terms:
+          type: array
+          items:
+            type: string
+        selectedTerm:
+          type: string
+        promotionAssessmentAvailable:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExaminationResultRecord"
+      required: [schoolId, sessionId, className, sectionName, terms, selectedTerm, promotionAssessmentAvailable, results]
+    StudentExaminationResult:
+      type: object
+      additionalProperties: false
+      properties:
+        studentId:
+          type: integer
+        termResults:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/ExaminationSubjectResult"
+        termAverages:
+          type: object
+          additionalProperties:
+            type: ["number", "null"]
+        termGrades:
+          type: object
+          additionalProperties:
+            oneOf:
+              - $ref: "#/components/schemas/ExaminationGrade"
+              - type: "null"
+        allTermFailCounts:
+          type: object
+          additionalProperties:
+            type: ["integer", "null"]
+        resultStatusByTerm:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ExaminationResultStatus"
+        attendancePct:
+          type: ["number", "null"]
+      required: [studentId, termResults, termAverages, termGrades, allTermFailCounts, resultStatusByTerm, attendancePct]
+    StudentExaminationResultsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        schoolId:
+          type: integer
+        sessionId:
+          type: integer
+        className:
+          type: string
+        sectionName:
+          type: string
+        terms:
+          type: array
+          items:
+            type: string
+        result:
+          $ref: "#/components/schemas/StudentExaminationResult"
+      required: [schoolId, sessionId, className, sectionName, terms, result]
+

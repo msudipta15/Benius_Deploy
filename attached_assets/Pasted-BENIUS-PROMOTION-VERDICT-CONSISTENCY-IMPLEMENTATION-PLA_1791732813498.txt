@@ -1,0 +1,52 @@
+BENIUS — PROMOTION VERDICT CONSISTENCY IMPLEMENTATION PLAN
+
+MODE: READ-ONLY CODE REVIEW AND PLANNING
+
+The Development database identity investigation is blocked by platform tooling. Do not repeat it.
+
+OBJECTIVE:
+Prepare a minimal, safe implementation plan to make promotion decisions consistent across BENIUS portals.
+
+TASKS:
+
+1. Identify the existing authoritative executed-verdict resolver used by Principal Exam Controller.
+
+2. Design how Principal Analytics can reuse the same resolver instead of treating adminExecuted and the ledger decision as sufficient evidence of the final verdict.
+
+3. Identify the minimum read-side validation required to ensure an applied Principal override agrees with execution audit and academic history.
+
+4. Design how Teacher Examination Results can display:
+   - Teacher Recommendation
+   - Principal Final Decision
+   - Execution status
+
+5. Review Student Examination Results and identify whether an existing publication mechanism supports displaying the executed final outcome.
+
+6. If no publication mechanism exists, propose a separate design. Do not expose internal promotion decisions by default.
+
+7. Preserve:
+   - Authenticated school/tenant isolation.
+   - Exact Academic Session ID isolation.
+   - Class, section, term, and student scope.
+   - Archived-session read-only behavior.
+   - Historical executed decisions.
+   - Current Student Registry placement independence from historical results.
+
+8. Identify focused regression tests, including conflicting execution evidence, cross-school access, cross-session leakage, and unpublished Student results.
+
+9. Provide:
+   - Exact files/functions requiring changes.
+   - Minimum proposed code changes.
+   - Any database migration requirements.
+   - Potential compatibility risks.
+   - Implementation and rollback sequence.
+
+RESTRICTIONS:
+- No code modifications.
+- No database connections or queries.
+- No migrations.
+- No workflow restarts.
+- No Production or Mobile changes.
+- No historical record corrections.
+
+STOP after producing the implementation plan. Wait for approval.

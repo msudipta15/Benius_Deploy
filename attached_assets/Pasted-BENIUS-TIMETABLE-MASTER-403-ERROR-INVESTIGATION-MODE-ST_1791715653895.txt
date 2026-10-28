@@ -1,0 +1,64 @@
+BENIUS — TIMETABLE MASTER 403 ERROR INVESTIGATION
+
+MODE: STRICT READ-ONLY AUDIT
+
+ISSUE:
+In the Principal Portal, navigating to:
+
+/admin-dashboard/timetable/structure
+
+Selecting Class 1 under Bell Structure displays:
+
+"Timetable structure could not be loaded (403)"
+
+CONTEXT:
+- School: Lilli litera School
+- Selected Academic Session: 2026–2027 (Active)
+- Module: Timetable Master
+- Tab: Bell Structure
+
+INVESTIGATE:
+
+1. Identify the exact frontend API request that loads the timetable structure.
+
+2. Identify the backend route handling this request.
+
+3. Determine which middleware or authorization check returns HTTP 403.
+
+4. Check whether the request includes the correct Academic Session ID, school ID, and authenticated Principal context.
+
+5. Check whether the request is incorrectly blocked by the Academic Session security middleware.
+
+6. Verify whether the timetable structure is school-wide, class-specific, session-specific, or a combination. Do not assume its intended scope.
+
+7. Check whether the selected class exists and belongs to the authenticated school.
+
+8. Determine whether this issue affects only new schools or all schools.
+
+9. Review whether recent authentication or Academic Session changes could have introduced the problem, without assuming they caused it.
+
+10. Recommend the smallest safe correction while preserving:
+- Strict school/tenant isolation
+- Academic Session isolation
+- Archived-session read-only protection
+- Principal authentication and authorization
+
+IMPORTANT:
+Do not bypass authorization or remove security middleware simply to eliminate the 403 error.
+
+STRICT RESTRICTIONS:
+- READ ONLY.
+- No code changes.
+- No database modifications or migrations.
+- No workflow restarts.
+- No Production or Mobile changes.
+
+REPORT:
+- Exact failing API endpoint
+- Exact source of HTTP 403
+- Root cause
+- Minimum safe fix
+- Files requiring changes
+- Whether tests or an API restart would be required
+
+STOP and wait for approval.

@@ -1,0 +1,106 @@
+BENIUS — RESOLVE BELL STRUCTURE 403 ERROR
+
+MODE: DEVELOPMENT-ONLY TARGETED BUG FIX
+
+PRIORITY: HIGH
+
+The Principal Timetable Master → Bell Structure is unusable because of a persistent HTTP 403.
+
+URL:
+/admin-dashboard/timetable/structure
+
+Failing request:
+GET /api/timetable/structure?class=1
+
+Error:
+Academic session does not belong to this school.
+
+KNOWN FACTS:
+
+- Authenticated Development Principal belongs to School ID 41.
+- The authenticated Academic Sessions API lists Session ID 57 for School ID 41.
+- Timetable structure is intentionally scoped by school_id, session_id and class.
+- resolveTimetableSessionId() in teacher-routes.ts rejects the request when its supplied session ID does not resolve for the authenticated school.
+- Earlier audits could not observe the actual failing x-view-session-id.
+- Repeating static code audits has not resolved the problem.
+
+OBJECTIVE:
+
+Identify the runtime mismatch, implement the smallest evidence-based correction, and make Bell Structure load correctly for an authorized Principal.
+
+STEP 1 — CAPTURE RUNTIME EVIDENCE
+
+Use authorized Development-only diagnostics.
+
+1. Reproduce the Bell Structure request through the actual BENIUS Development application if browser access is available.
+2. Record the authenticated school ID, parsed x-view-session-id, and result of the school/session lookup.
+3. Compare the request against the authenticated Academic Sessions response.
+4. Trace the exact frontend session value passed to sessionFetchForViewSession().
+5. If needed, add narrowly scoped temporary Development-only diagnostic logging that records numeric school/session IDs and lookup outcomes.
+
+Never log cookies, passwords, session tokens, authorization headers, or personal information.
+
+If a temporary diagnostic code change requires a workflow restart, STOP and request approval before restarting.
+
+STEP 2 — IDENTIFY AND FIX THE CAUSE
+
+Once the mismatch is established, implement the smallest correction.
+
+Investigate:
+
+- Incorrect selected Academic Session propagation.
+- Request-header construction.
+- Session initialization or navigation race conditions.
+- Stale session values after changing schools.
+- Backend session lookup or database connection inconsistencies.
+- Incorrect parsing or handling of the session header.
+
+IMPORTANT SECURITY RULES:
+
+- Never disable school/session validation.
+- Never accept an Academic Session belonging to another school.
+- Never silently substitute the active session for an explicitly selected historical session.
+- Preserve archived-session read-only restrictions.
+- Preserve school/tenant isolation.
+- Do not change timetable data to hide the error.
+
+If the root cause remains unverified, do not apply a speculative fix. Report the exact missing runtime evidence and the least disruptive way to obtain it.
+
+STEP 3 — REGRESSION TESTS
+
+Verify:
+
+1. Bell Structure loads for School 41, Session 57, Class 1.
+2. A valid selected historical session can be read.
+3. Cross-school session IDs return 403.
+4. Invalid or missing session IDs are handled according to the existing secure API contract.
+5. Archived-session timetable writes remain blocked.
+6. Switching schools or sessions does not reuse an invalid selection.
+7. Existing Schedule Grid and Publish functionality remain unaffected.
+
+Use isolated tests; do not alter live school data.
+
+STEP 4 — VALIDATION
+
+Run focused API and Web tests, relevant builds, and git diff --check.
+
+RESTRICTIONS:
+
+- Development only.
+- No database migrations or data modifications.
+- No Production or Mobile changes.
+- No Super Admin changes.
+- No Academic Session activation or deletion.
+- No workflow restarts without separate approval.
+- Do not modify unrelated timetable features.
+
+FINAL REPORT:
+
+- Exact confirmed root cause.
+- Evidence from the failing request.
+- Files changed.
+- Fix implemented.
+- Tests and build results.
+- Whether a Development restart is needed.
+
+STOP before any workflow restart.

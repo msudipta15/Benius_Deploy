@@ -1,0 +1,164 @@
+# BENIUS — SUPER ADMIN LOGIN IMPLEMENTATION
+## PHASE 1: DEVELOPMENT CODE ONLY
+
+I approve implementing the Super Admin authentication system based on the previously completed read-only architecture audit.
+
+IMPORTANT: Implement the code and prepare the database migration, but DO NOT execute the migration or modify database records.
+
+### 1. Super Admin Database
+
+Prepare one additive SQL migration containing:
+
+- `super_admin_accounts`
+- `super_admin_sessions`
+- `super_admin_login_attempts`
+
+Requirements:
+- Email must be unique and normalized.
+- Passwords must use Argon2id hashes.
+- Accounts must support active/inactive status.
+- Sessions must support expiration and revocation.
+- Login throttling must persist across API restarts.
+- Super Admin accounts must not depend on any school ID.
+
+Do not reuse the existing school-owned `users` table.
+
+### 2. Super Admin Login Page
+
+Create:
+
+`/super-master/login`
+
+Include:
+- Email field
+- Password field
+- Login button
+- Clear invalid-credentials message
+- Professional BENIUS design
+
+Do not add:
+- Registration
+- Signup
+- Public account creation
+- Public password reset
+
+### 3. Authentication
+
+Implement:
+
+- Database-based email/password verification
+- Argon2id password hashing
+- Separate secure Super Admin sessions
+- HTTP-only authentication cookie
+- Secure cookie settings for HTTPS
+- Strict SameSite protection
+- Session expiry and revocation
+- Login rate limiting
+- Logout functionality
+
+For local HTTP development, use a narrowly restricted development cookie configuration. Never weaken Production cookie security.
+
+Do not modify the existing Principal, Teacher or Student authentication flows.
+
+### 4. Backend Security — CRITICAL
+
+Protect these APIs with genuine server-side Super Admin authentication:
+
+- `GET /api/schools`
+- `POST /api/schools`
+- `DELETE /api/schools/:id`
+
+Also inspect and protect any other endpoints that expose global Super Admin functionality.
+
+Unauthenticated users and ordinary school Admin/Principal accounts must be denied.
+
+Protect the `/super-master` page using the new Super Admin session.
+
+Do not treat knowledge of the URL as authorization.
+
+### 5. Academic Session Header Conflict
+
+Fix the archived-session restriction error affecting school management.
+
+- Exclude the exact authorized school-management requests from Academic Session header injection.
+- Apply a narrow backend session-guard exemption.
+- Keep Super Admin authorization mandatory.
+- Preserve existing Academic Session protections for all school portals.
+
+Do not introduce a global security bypass.
+
+### 6. Manual Database Account Creation
+
+I want to manually add Super Admin accounts to PostgreSQL.
+
+Prepare a local-only password-hash generator that:
+
+- Privately accepts a password without displaying it.
+- Generates an Argon2id password hash.
+- Outputs the hash for manual database insertion.
+- Does not store plaintext passwords.
+- Does not automatically create accounts.
+
+Provide documentation explaining how I can manually insert my email and generated password hash after the migration is approved and applied.
+
+Do not request my password in Replit AI chat.
+
+### 7. School Deletion Safety
+
+Preserve the existing deletion transaction.
+
+Add or retain explicit deletion confirmation in the UI.
+
+Ensure deletion requires an authenticated Super Admin session and appropriate CSRF protection.
+
+Do not execute any real school deletion.
+
+### 8. Verification
+
+Add focused tests for:
+
+- Correct and incorrect credentials
+- Unauthenticated access rejection
+- Principal/Teacher/Student role isolation
+- Login and logout
+- Expired and revoked sessions
+- Login throttling
+- Session token rotation and secure cookie behavior
+- CSRF protection for state-changing Super Admin operations
+- Academic Session header independence
+- School-management API authorization
+
+Run available non-mutating tests, builds and `git diff --check`.
+
+Do not run database-backed tests that write fixtures into a real or shared database.
+
+### 9. STRICT SAFETY RULES
+
+- Development code only.
+- Do not execute database migrations.
+- Do not create any Super Admin account.
+- Do not insert, update or delete database records.
+- Do not call the real school deletion API.
+- Do not restart workflows.
+- Do not deploy or modify Production.
+- Do not modify Mobile.
+- Do not expose credentials or secrets.
+- Do not alter existing Principal, Teacher or Student login behavior.
+
+If implementation requires an unapproved architectural change or an unsafe database operation, STOP and report it.
+
+### 10. FINAL REPORT
+
+Provide:
+
+1. Files created or modified.
+2. Database tables and migration prepared.
+3. Authentication and authorization implementation details.
+4. Academic Session conflict fix.
+5. Test and build results.
+6. Security risks or unresolved issues.
+7. Exact next steps for migration approval.
+
+STOP AFTER PHASE 1.
+
+WAIT FOR MY EXPLICIT APPROVAL BEFORE EXECUTING ANY MIGRATION OR RESTART.

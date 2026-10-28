@@ -1,0 +1,55 @@
+BENIUS — SUPER ADMIN SCHOOL DELETION ERROR AUDIT
+
+MODE: STRICT READ-ONLY — DO NOT MODIFY CODE
+
+ISSUE:
+
+On `/super-master`, when attempting to delete a school, the application displays:
+
+"Security Restriction: Write operations are strictly blocked for archived school years."
+
+EXPECTED:
+
+The Super Admin school-management functionality should not be incorrectly blocked by an Academic Session restriction.
+
+INVESTIGATE:
+
+1. Identify the frontend school deletion handler and exact API endpoint.
+
+2. Trace the request through authentication, authorization, and Academic Session middleware.
+
+3. Identify the exact function and line that generates the archived-school-year restriction error.
+
+4. Determine whether the request incorrectly includes an `x-view-session-id` header or other Academic Session context.
+
+5. Determine whether the shared Academic Session write guard is incorrectly applied to the Super Admin school deletion endpoint.
+
+6. Verify that school deletion requires genuine Super Admin authorization, not merely an authenticated Principal/Admin session.
+
+7. Inspect whether the deletion API has additional safeguards, such as school ownership validation, transaction handling, dependent-record cleanup, and protection against accidental deletion.
+
+8. Determine whether the problem was introduced by recent Academic Session security changes or existed previously.
+
+9. Recommend the smallest safe correction that preserves all existing Academic Session protections and tenant isolation.
+
+IMPORTANT:
+
+- Do not delete any school.
+- Do not call the deletion API.
+- Do not change code.
+- Do not modify the database.
+- Do not disable any security middleware.
+- Do not restart or deploy.
+- Do not modify Production or Mobile.
+
+REPORT:
+
+- Exact root cause.
+- Frontend file and line numbers.
+- Backend route and middleware line numbers.
+- Whether Super Admin authentication is properly enforced.
+- Whether deletion is safe and transactional.
+- Minimum recommended fix.
+- Any security risks discovered.
+
+STOP AFTER THE AUDIT AND WAIT FOR APPROVAL.

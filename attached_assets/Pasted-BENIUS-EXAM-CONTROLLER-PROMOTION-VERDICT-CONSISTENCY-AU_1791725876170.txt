@@ -1,0 +1,175 @@
+BENIUS — EXAM CONTROLLER PROMOTION VERDICT CONSISTENCY AUDIT
+
+MODE: STRICT READ-ONLY — NO IMPLEMENTATION
+
+PRIORITY: HIGH
+
+OBJECTIVE:
+
+Audit whether Teacher recommendations, Principal final promotion/retention decisions, and executed promotion outcomes are consistently reflected across the Principal Exam Controller, Principal Analytics, Teacher Examination Results, and Student Examination Results.
+
+IMPORTANT CONTEXT:
+
+BENIUS is a multi-tenant school management application.
+
+Every Exam Controller operation and historical result must be strictly scoped to:
+
+1. Authenticated school_id.
+2. Selected Academic Session ID.
+3. Correct student and applicable examination context.
+
+Do not mix decisions from different schools or Academic Sessions.
+
+SCREENSHOT OBSERVATION:
+
+Principal Exam Controller, archived session "new 2028", Student DSID LLS-0003:
+
+- Teacher recommendation: Promote → Class 2-A.
+- Principal saved override: Retain, shown as applied in an executed decision.
+- Performance & Promotion Results displays:
+  Teacher Recommended: Promoted → 2-A
+  Principal Final: Promoted → 2-A.
+
+This appears inconsistent.
+
+First determine whether these records refer to the same student, Academic Session, examination context, and execution.
+
+Do not assume the saved override is the authoritative final verdict without verifying the actual executed decision record.
+
+AUDIT 1 — PRINCIPAL EXAM CONTROLLER
+
+Inspect:
+
+- Teacher recommendation storage and retrieval.
+- Principal promotion/retention override storage.
+- Draft versus saved versus executed decision states.
+- Execution history and decision linkage.
+- Final promotion/retention verdict resolution.
+- Destination class and section.
+- Archived-session historical display.
+
+Determine why the screenshot appears to show an applied Retain override alongside Principal Final: Promoted.
+
+AUDIT 2 — PRINCIPAL ANALYTICS
+
+Route:
+/admin-dashboard/analytics
+
+Identify all promotion-related analytics cards, tables, reports, charts, and student-level results.
+
+Verify whether Analytics reads:
+
+- Teacher recommendation.
+- Principal override.
+- Executed Principal final decision.
+- Current Student Registry placement.
+- Historical promotion records.
+
+Determine whether Analytics reflects the authoritative executed verdict for the selected Academic Session.
+
+Identify any calculations using current-session or school-global records instead of selected-session historical records.
+
+AUDIT 3 — TEACHER EXAMINATION RESULTS
+
+Inspect the Teacher Portal Examination → Results module.
+
+Determine:
+
+- Whether the Teacher recommendation remains visible as a separate historical recommendation.
+- Whether the Principal final executed verdict is visible.
+- Whether the Teacher result incorrectly treats the Teacher recommendation as the final decision.
+- Whether the selected Academic Session is enforced.
+- Whether the result can change after a Principal decision is executed.
+
+AUDIT 4 — STUDENT EXAMINATION RESULTS
+
+Inspect Student Portal → Examination → Results.
+
+Determine:
+
+- Whether the student can see the correct final promotion/retention verdict.
+- Whether the result is based on an executed Principal decision or a preliminary Teacher recommendation.
+- Whether examination result publication rules control student visibility.
+- Whether draft, pending, or unpublished decisions could leak to students.
+- Whether the correct Academic Session and Student enrollment are used.
+
+IMPORTANT:
+Do not expose unpublished or internal decisions to Students merely to make portal displays consistent.
+
+AUDIT 5 — SINGLE SOURCE OF TRUTH
+
+Trace the complete data flow:
+
+Teacher Recommendation
+→ Principal Override
+→ Final Decision Execution
+→ Historical Decision Record
+→ Principal Analytics
+→ Teacher Examination Results
+→ Student Examination Results.
+
+Identify the authoritative persisted record for an executed final verdict.
+
+Verify that a saved override is not confused with an executed verdict.
+
+Check whether the final verdict is calculated differently by different modules.
+
+Check whether any module uses current Student Registry placement as a substitute for the historical decision.
+
+AUDIT 6 — TENANT AND SESSION ISOLATION
+
+Verify:
+
+- Strict authenticated school_id isolation.
+- Strict Academic Session ID isolation.
+- Correct student and examination linkage.
+- Archived Academic Sessions remain read-only.
+- Historical verdicts cannot be rewritten by later policy, enrollment, or promotion changes.
+- No cross-session fallback or mixing of historical decisions.
+
+AUDIT 7 — DEVELOPMENT DATA VERIFICATION
+
+If authorized, use SELECT-only queries against the verified Development database to inspect the relevant records for:
+
+School ID 41
+Student DSID LLS-0003
+Academic Session "new 2028"
+
+Verify actual session ID, recommendation, override, execution status, destination class/section, and final persisted verdict.
+
+Do not assume the visible labels reflect the underlying data correctly.
+
+Do not update any records.
+
+FINAL REPORT:
+
+Provide a table:
+
+Module | Current Data Source | Teacher Recommendation | Principal Final Verdict | Academic Session Scope | Gap | Required Correction
+
+Then answer:
+
+1. Why does the Exam Controller show Retain applied but Principal Final: Promoted?
+2. What is the actual authoritative executed verdict?
+3. Does Principal Analytics display that verdict correctly?
+4. Does Teacher Examination Results display both decisions correctly?
+5. Does Student Examination Results display the correct published final verdict?
+6. Are there any cross-session or cross-school data risks?
+7. Can the inconsistencies be corrected without database migrations?
+8. What regression tests are necessary?
+
+Classify every finding as CONFIRMED, SUSPECTED, or NOT VERIFIED.
+
+STRICT RESTRICTIONS:
+
+- READ-ONLY ONLY.
+- No code changes.
+- No database writes.
+- No migrations.
+- No workflow restarts.
+- No Academic Session activation or deletion.
+- No promotion execution or override changes.
+- No Production or Mobile changes.
+- Do not alter examination publication settings.
+
+STOP after the audit and wait for approval.

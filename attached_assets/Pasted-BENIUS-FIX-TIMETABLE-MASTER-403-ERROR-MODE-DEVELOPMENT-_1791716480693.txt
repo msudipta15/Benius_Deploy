@@ -1,0 +1,78 @@
+BENIUS — FIX TIMETABLE MASTER 403 ERROR
+
+MODE: DEVELOPMENT ONLY — TARGETED BUG FIX
+
+ISSUE:
+Principal Portal → Timetable Master → Bell Structure
+
+URL:
+/admin-dashboard/timetable/structure
+
+Failing API:
+GET /api/timetable/structure?class=1
+
+Error:
+HTTP 403 — Academic session does not belong to this school.
+
+PREVIOUS AUDIT:
+- Timetable entries and Bell Structure are Academic Session–based.
+- The backend validates the supplied session against the authenticated school.
+- The global archived-session guard is not responsible.
+- The exact failing x-view-session-id has not yet been captured.
+- The frontend maintains a selected Academic Session and sends it in API requests.
+
+OBJECTIVE:
+Fix the 403 without weakening authentication, tenant isolation, or Academic Session protections.
+
+STEP 1 — VERIFY ROOT CAUSE
+
+1. Reproduce the failing request using an authorized Development Principal session.
+2. Compare the failing x-view-session-id with the Academic Session IDs belonging to the authenticated school.
+3. Trace how Timetable Master obtains its selected session.
+4. Inspect Principal login, Admin Dashboard initialization, and session switching.
+5. Determine whether the problem is a stale header, incorrect session selection, initialization race, or another cause.
+
+Do not expose cookies, passwords, or authentication tokens.
+
+If the exact cause cannot be established, STOP and report what evidence is missing. Do not guess or apply a speculative fix.
+
+STEP 2 — IMPLEMENT MINIMUM CORRECTION
+
+Once the root cause is confirmed:
+
+1. Correct the specific frontend or backend defect.
+2. Ensure Timetable Master always uses a valid selected Academic Session belonging to the authenticated Principal's school.
+3. Preserve the selected Academic Session when navigating between Principal modules.
+4. Support historical-session reads while keeping archived-session writes blocked.
+5. Preserve school_id and session_id validation on the backend.
+6. Never silently substitute another session for an explicitly selected historical session.
+7. Do not modify timetable records or existing school data.
+
+STEP 3 — VERIFY
+
+Add focused regression tests for:
+- Correct active-session requests.
+- Switching Academic Sessions.
+- Stale or invalid session selection.
+- Cross-school session rejection.
+- Archived-session read access.
+- Archived-session write rejection.
+
+Run focused API/Web tests, builds, and git diff --check.
+
+STRICT RESTRICTIONS:
+- No database migrations or manual database changes.
+- No timetable data deletion or modification.
+- No Academic Session activation or deletion.
+- No changes to Super Admin authentication.
+- No Production or Mobile changes.
+- No workflow restarts without separate approval.
+
+FINAL REPORT:
+- Confirmed root cause.
+- Files changed.
+- Exact correction.
+- Test and build results.
+- Whether a Development API restart is required.
+
+STOP after implementation and verification. Wait for my approval before restarting.

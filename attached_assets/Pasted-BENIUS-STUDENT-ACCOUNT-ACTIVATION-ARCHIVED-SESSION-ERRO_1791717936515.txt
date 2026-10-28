@@ -1,0 +1,68 @@
+BENIUS — STUDENT ACCOUNT ACTIVATION ARCHIVED-SESSION ERROR
+
+MODE: STRICT READ-ONLY AUDIT
+
+ISSUE:
+
+Student Registration → Activate Your Account
+
+URL: /register
+
+When a Student enters DSID, phone number, and date of birth and clicks Verify Identity, the application displays:
+
+"Security Restriction: Write operations are strictly blocked for archived school years."
+
+OBJECTIVE:
+
+Identify the exact root cause and the smallest secure correction.
+
+AUDIT:
+
+1. Identify the frontend API request triggered by Verify Identity.
+
+2. Identify the exact backend route and HTTP method.
+
+3. Determine whether the frontend automatically attaches x-view-session-id.
+
+4. Check whether the global archived-session write guard is responsible for the error.
+
+5. Verify whether identity verification and account activation are independent of the selected Academic Session.
+
+6. Inspect how DSID, phone number, date of birth, student identity, and school/tenant association are validated.
+
+7. Verify whether the activation flow changes only account credentials/activation state or also writes academic/enrollment data.
+
+8. Confirm whether removing the selected-session header or narrowly exempting the exact endpoint would preserve all existing security protections.
+
+9. Check subsequent activation steps, including password setup, for the same problem.
+
+10. Check whether a stale Academic Session header could originate from a previous Principal, Teacher, or Student login.
+
+REQUIRED SECURITY:
+
+- Preserve DSID, phone number, and DOB verification.
+- Preserve school/tenant isolation.
+- Preserve account ownership checks.
+- Preserve activation-token or pending-activation checks, if applicable.
+- Do not weaken archived-session restrictions for academic records.
+- Do not broadly exempt /api/student/* or /api/register/*.
+
+FINAL REPORT:
+
+1. Exact failing endpoint and method.
+2. Confirmed root cause.
+3. Whether activation is account-level or Academic Session–specific.
+4. Smallest safe correction.
+5. Other affected activation steps.
+6. Required regression tests.
+7. Whether migration or restart is necessary.
+
+STRICT RESTRICTIONS:
+
+- No code modifications.
+- No database writes or migrations.
+- No real student account activation during testing.
+- No workflow restarts.
+- No Production or Mobile changes.
+
+STOP after the audit and wait for approval.

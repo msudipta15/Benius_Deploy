@@ -1,0 +1,118 @@
+BENIUS — PROMOTION VERDICT CONSISTENCY FIX
+PHASE 1: PRINCIPAL + TEACHER ONLY
+
+MODE: CONTROLLED DEVELOPMENT IMPLEMENTATION
+
+I approve the narrowly scoped Principal and Teacher promotion-verdict consistency implementation described in the completed read-only audit.
+
+OBJECTIVE:
+Ensure Principal Exam Controller, Principal Analytics, and Teacher Examination Results use the same validated executed promotion verdict for the exact authenticated school, Academic Session, class, section, term, and student.
+
+STEP 1 — EXECUTION EVIDENCE VALIDATION
+
+Review the existing getPromotionCohortFinalDecisions() resolver and its promotion override policy.
+
+Strengthen executed-record validation:
+
+- If a Principal override was applied, the audited final verdict and destination must match that applied proposal.
+- If no Principal override was applied, the audited final verdict must match the locked Teacher recommendation.
+- The audited destination and target session must agree with the corresponding academic_history evidence.
+- Reject ambiguous, missing, duplicate, or conflicting evidence as an unresolved/blocked verdict.
+- Never silently choose Promote or Retain when evidence conflicts.
+- Preserve explicitly supported legacy history-only semantics without inventing an unsupported verdict.
+- Do not change the historical records or promotion execution process.
+
+STEP 2 — PRINCIPAL ANALYTICS
+
+Update the existing promotion analytics endpoint to use the same validated final-decision resolver as Principal Exam Controller.
+
+Return clearly separated fields for:
+- Teacher recommendation
+- Principal final executed verdict
+- Execution status
+- Evidence validation status, where needed
+
+Update Analytics UI labels and counts accordingly.
+
+Do not derive Principal Final solely from adminExecuted and the Teacher ledger decision.
+
+Preserve compatible existing response fields where possible. Do not let old fields silently override the new authoritative result.
+
+STEP 3 — TEACHER EXAMINATION RESULTS
+
+Display separate read-only information:
+
+Teacher Recommendation
+Principal Final Decision
+Execution Status
+
+Only show a Principal final verdict when validated execution evidence supports it.
+
+For unexecuted or inconsistent decisions, display an appropriate pending or unavailable status.
+
+Do not expose pending Principal override proposals, internal reasons, or unrelated audit details.
+
+STEP 4 — SECURITY AND HISTORICAL INTEGRITY
+
+Mandatory:
+- Strict authenticated school/tenant isolation.
+- Strict selected Academic Session ID isolation.
+- Class, section, term, and student scoping.
+- No cross-session fallback.
+- No cross-school data leakage.
+- Archived Academic Sessions remain read-only.
+- Historical executed decisions must not be recalculated using current Student Registry placement.
+- Preserve the distinction between historical promotion verdict and current student placement.
+
+STEP 5 — STUDENT PORTAL
+
+Do not modify Student Examination Results in this phase.
+
+Do not expose internal promotion decisions to Students.
+
+Student-visible publication will be handled separately after explicit product and migration approval.
+
+STEP 6 — REGRESSION TESTS
+
+Add or update focused tests for:
+
+1. Applied Retain override with matching execution evidence.
+2. Applied Promote override with matching execution evidence.
+3. Applied override conflicting with audited final verdict.
+4. Applied override destination mismatch.
+5. No override: final verdict matches locked Teacher recommendation.
+6. No override: conflicting final verdict is blocked.
+7. Missing or duplicate execution evidence.
+8. Academic history destination or target-session mismatch.
+9. Analytics and Exam Controller agree for the same execution.
+10. Teacher recommendation remains distinct from Principal final.
+11. Cross-school and cross-session isolation.
+12. Archived-session reads do not write.
+13. Legacy execution evidence remains explicitly identified.
+14. Student unpublished decisions remain hidden.
+
+STEP 7 — VALIDATION
+
+Run focused tests, TypeScript checks, and relevant API/Web builds.
+
+Report:
+- Files changed
+- Exact behavior corrected
+- Test results
+- Any unresolved legacy cases
+- API response compatibility impact
+- Whether an API or Web restart is required
+
+STRICT RESTRICTIONS:
+
+- Development code changes only.
+- No database writes or migrations.
+- No manual promotion execution.
+- No historical student-record correction.
+- No Academic Session activation, deletion, or modification.
+- No Production or Mobile changes.
+- No Student publication implementation.
+- No workflow restarts without separate approval.
+- Do not attempt the blocked database identity investigation again.
+
+STOP after implementation, tests, and builds. Wait for separate workflow restart approval.

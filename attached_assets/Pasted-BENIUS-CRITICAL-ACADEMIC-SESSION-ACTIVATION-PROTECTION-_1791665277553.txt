@@ -1,0 +1,61 @@
+BENIUS — CRITICAL ACADEMIC SESSION ACTIVATION PROTECTION
+
+MODE: DEVELOPMENT IMPLEMENTATION — NO DATABASE CHANGES
+
+Implement strict forward-only Academic Session activation.
+
+REQUIREMENTS:
+
+1. Identify the currently active Academic Session within the authenticated school.
+
+2. Determine the next eligible session using stored Academic Session start dates, not session names.
+
+3. Allow normal activation only of the immediate next chronological session.
+
+4. Block activation of:
+   
+   - Previous or archived historical sessions.
+   - Sessions older than the currently active session.
+   - Later sessions that would skip the immediate next session.
+   - The already active session.
+
+5. Enforce these restrictions in BOTH:
+   
+   - Frontend Activate button visibility.
+   - Backend activation preview and final activation transaction.
+
+6. Preserve existing Student Registry placement validation, school/tenant isolation, archived-session protections, and all activation safeguards.
+
+7. Handle first-session activation, overlapping dates, duplicate start dates, and missing active sessions safely. Do not guess eligibility or accidentally block legitimate first-session setup. If these cases cannot be handled safely using existing rules, STOP and report before implementation.
+
+8. Do not modify session dates, statuses, student records, enrollments, promotion decisions, or historical data.
+
+9. Add focused regression tests for:
+   
+   - Valid next-session activation.
+   - Archived/older session rejection.
+   - Skipped-session rejection.
+   - Cross-school isolation.
+   - Invalid/ambiguous session chronology.
+   - Existing activation safety checks.
+
+10. Run focused tests, API/Web builds, and git diff --check.
+
+STRICT SAFETY:
+
+- Development only.
+- No real session activation.
+- No database writes or migrations.
+- No Production or Mobile changes.
+- No workflow restarts or deployments.
+- Do not weaken existing authentication or authorization.
+
+REPORT:
+
+- Eligibility rule implemented.
+- Files changed.
+- Test/build results.
+- Any unresolved risks.
+- Whether a restart is required.
+
+STOP after implementation and verification. Wait for approval before restarting.

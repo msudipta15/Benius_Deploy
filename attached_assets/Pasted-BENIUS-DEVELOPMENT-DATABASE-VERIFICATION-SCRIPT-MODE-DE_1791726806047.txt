@@ -1,0 +1,66 @@
+BENIUS — DEVELOPMENT DATABASE VERIFICATION SCRIPT
+
+MODE: DEVELOPMENT ONLY — LIMITED DIAGNOSTIC AUTHORIZATION
+
+OBJECTIVE:
+Verify the database used by the running Development API and compare it with Replit's managed Development SQL Console.
+
+Previous read-only audits were inconclusive because no authorized mechanism exposed the API database identity.
+
+AUTHORIZATION:
+
+You may create and execute one temporary, local, read-only diagnostic script within the Development API environment.
+
+REQUIREMENTS:
+
+1. Use the same database configuration and environment as the Development API.
+
+2. Before executing, verify that the script is targeting the Development environment, not Production.
+
+3. Use only SELECT statements and read-only database transactions.
+
+4. Retrieve non-sensitive database identity information sufficient to compare with the managed SQL Console.
+
+5. Do not print DATABASE_URL, passwords, tokens, connection strings, or student information.
+
+6. Compare the identity results with the managed Development SQL Console.
+
+7. Do not declare the databases identical based only on matching database names or usernames.
+
+8. If a reliable match cannot be established, report INCONCLUSIVE and stop.
+
+9. If the database identity is verified, perform SELECT-only inspection for:
+   - School ID 41
+   - Student DSID LLS-0003
+   - Academic Session "new 2028"
+
+10. Correlate the Teacher recommendation, Principal override, execution audit, and academic history.
+
+11. Report the authoritative executed verdict only when the evidence agrees.
+
+12. Remove the temporary diagnostic script after verification, preserving the diagnostic findings.
+
+STRICT RESTRICTIONS:
+
+- No database writes.
+- No migrations.
+- No modifications to existing application logic.
+- No new API endpoints.
+- No workflow restarts.
+- No Academic Session changes.
+- No promotion execution or correction.
+- No Production or Mobile modifications.
+
+If execution requires access to a running process or environment that is unavailable, STOP and report the exact limitation.
+
+FINAL REPORT:
+
+- Database identity: VERIFIED SAME / VERIFIED DIFFERENT / INCONCLUSIVE
+- Teacher recommendation
+- Principal saved override
+- Executed Principal verdict
+- Academic history destination
+- Any inconsistencies found
+- Recommended minimum application correction
+
+STOP after reporting.

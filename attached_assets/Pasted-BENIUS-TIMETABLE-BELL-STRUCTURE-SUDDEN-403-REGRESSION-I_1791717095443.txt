@@ -1,0 +1,61 @@
+BENIUS — TIMETABLE BELL STRUCTURE SUDDEN 403 REGRESSION INVESTIGATION
+
+MODE: STRICT READ-ONLY
+
+CONTEXT:
+Principal Portal → Timetable Master → Bell Structure was previously working correctly.
+
+It has suddenly started returning:
+
+GET /api/timetable/structure?class=1
+HTTP 403 — Academic session does not belong to this school.
+
+Development school:
+Lilli litera School — School ID 41
+Known Academic Session ID: 57
+
+OBJECTIVE:
+Investigate why previously working functionality has stopped working.
+
+1. Review recent relevant Git changes affecting:
+   - Timetable Master
+   - Academic Session selection
+   - Shared API request headers
+   - Principal authentication
+   - Admin Dashboard initialization
+   - School/session validation middleware
+
+2. Compare the previously working behavior with the current implementation.
+
+3. Inspect whether recent changes introduced:
+   - Incorrect session ID propagation
+   - Frontend/backend session synchronization issues
+   - Authentication school-context mismatch
+   - Incorrect session lookup
+   - Session-selection initialization races
+
+4. Verify whether session ID 57 belongs to school ID 41 using read-only Development database queries, if authorized.
+
+5. Determine whether the issue is specific to the newly created school or potentially affects existing schools.
+
+6. Identify the exact regression only where evidence supports it.
+
+IMPORTANT:
+If the failing request header cannot be observed, clearly state that limitation. Do not claim a root cause based only on Git history or assumptions.
+
+REPORT:
+- What changed?
+- Which change could explain the regression?
+- What is confirmed versus suspected?
+- What additional evidence is required?
+- What is the smallest safe fix?
+
+STRICT RULES:
+- Do not modify code.
+- Do not change database records.
+- Do not run migrations.
+- Do not restart workflows.
+- Do not modify Production or Mobile.
+- Preserve school and Academic Session isolation.
+
+STOP after reporting findings.

@@ -1,0 +1,171 @@
+# BENIUS — CRITICAL ACADEMIC SESSION ACTIVATION SAFETY AUDIT
+
+MODE: STRICT READ-ONLY INVESTIGATION — NO IMPLEMENTATION
+
+## 1. CONTEXT
+
+Application: BENIUS School Management System
+
+Location:
+Admin Portal → School Setup → Academic Sessions
+
+CURRENT EXAMPLE:
+
+- 2026–2027: Archived
+- 2027–2028: Active
+- 2028–2029: Future or Draft
+
+Currently, the Academic Sessions page displays an "Activate" button for non-active sessions, including previously archived sessions.
+
+BUSINESS QUESTION:
+
+Should a Principal be allowed to reactivate a previous/archived Academic Session, or should activation be restricted to eligible upcoming sessions?
+
+We need to understand the existing backend behavior and risks before making any decision.
+
+## 2. INVESTIGATE CURRENT ACTIVATION BEHAVIOR
+
+Trace the complete activation flow:
+
+- Academic Sessions page
+- Activate button
+- Session Activation Gate
+- Activation preview API
+- Final activation API
+- Database transaction
+- Academic Session status updates
+- Student Registry placement synchronization
+
+Determine:
+
+1. Can a Principal currently reactivate an archived Academic Session?
+2. Does the backend independently enforce any restriction against backward activation?
+3. Can a future Draft session be activated?
+4. Can the Principal skip multiple sessions and activate a later session?
+5. Is activation based on chronological dates, session status, or simply the selected session ID?
+6. Does activation automatically archive the currently active session?
+7. Can activation be reversed safely?
+
+Do not perform any actual activation.
+
+## 3. STUDENT REGISTRY AND PROMOTION SAFETY
+
+Investigate exactly what happens to:
+
+- Current Student Registry Class
+- Current Section
+- Current Roll Number
+- Active student enrollments
+- Student promotion decisions
+- Historical enrollment records
+- Inactive students
+
+Determine whether activating an older session could cause Student Registry placements to revert to historical classes or sections.
+
+Identify whether any historical records could be modified, recalculated, duplicated, or deleted.
+
+Distinguish clearly between:
+- Student Registry current placement
+- Session-specific enrollment
+- Promotion history
+
+## 4. OTHER MODULES AND HISTORICAL DATA
+
+Assess the effect of backward activation on:
+
+- Exam Controller
+- Attendance
+- Timetable
+- Fees & Payments
+- Leave Requests
+- Noticeboard
+- Complaint Hub
+- Student and Teacher portals
+- Academic Session selection
+- Archived-session write protections
+
+For each module, distinguish confirmed code behavior from potential risks.
+
+Check whether reactivating an archived session could make historical records writable again or cause previously active workflows to become read-only.
+
+## 5. SECURITY AND ISOLATION
+
+Verify:
+
+- School/tenant isolation.
+- Academic Session ID isolation.
+- Archived-session read-only enforcement.
+- Server-side activation authorization.
+- Whether UI restrictions can be bypassed through direct API requests.
+- Whether activation requires valid target-session student enrollments.
+- Whether all required confirmations are enforced server-side or only in the frontend.
+
+Do not weaken or bypass any security controls.
+
+## 6. RECOMMENDED ACTIVATION POLICY
+
+Compare these three options:
+
+OPTION A:
+Allow activation of any non-active session, including archived sessions.
+
+OPTION B:
+Allow activation only of eligible upcoming sessions. Keep older sessions read-only.
+
+OPTION C:
+Allow forward activation normally, but permit backward activation only through a separate, tightly controlled recovery process.
+
+For each option, explain:
+- Benefits
+- Risks
+- Impact on Principal usability
+- Impact on student placements
+- Backend changes required
+- Whether existing records remain protected
+
+Recommend the safest long-term approach for a multi-tenant school management application.
+
+## 7. REQUIRED FINAL REPORT
+
+Provide a concise report containing:
+
+1. Can archived sessions currently be reactivated? YES/NO.
+2. Can future sessions be activated? YES/NO.
+3. Can sessions be skipped? YES/NO.
+4. What exactly happens to the currently active session?
+5. What happens to Student Registry placements?
+6. Can historical data become writable again?
+7. Are activation safeguards enforced by the backend?
+8. Risks across other modules.
+9. Recommended activation policy.
+10. Exact frontend/backend files and functions involved.
+11. Minimum changes required if we later approve the recommended policy.
+
+Support findings with exact file paths and line references.
+
+Clearly label any behavior that cannot be confirmed from code inspection.
+
+## 8. STRICT SAFETY RULES
+
+DO NOT:
+
+- Modify any code or tests.
+- Activate, archive, create, or delete sessions.
+- Execute database writes or migrations.
+- Execute student promotion.
+- Change Student Registry placements.
+- Modify academic records.
+- Change environment variables.
+- Restart workflows.
+- Deploy or publish.
+- Touch Production or Mobile.
+
+Use code inspection and existing tests only. Do not execute mutating APIs.
+
+STOP AFTER THE READ-ONLY AUDIT.
+
+WAIT FOR MY EXPLICIT APPROVAL BEFORE ANY IMPLEMENTATION.
+
+FINAL OBJECTIVE:
+
+Determine whether BENIUS should allow backward Academic Session activation, and establish the safest activation policy without risking student records, historical data, or school/tenant isolation.

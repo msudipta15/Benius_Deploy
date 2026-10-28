@@ -1,0 +1,521 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import test from "node:test";
+import {
+  executedPromotionEvidenceMatches,
+  assertPromotionOverrideActorRecord,
+  assertPromotionOverrideBatch,
+  promotionOverrideActorFromSession,
+  requirePromotionOverrideReason,
+  resolvePromotionFinalDecision,
+  validatePromotionOverrideCandidate,
+  type PromotionOverrideCandidate,
+} from "./promotion-override-policy";
+
+const validDecision = {
+  locked: true,
+  decision: "promoted",
+  targetClass: "6",
+  targetSection: "A",
+  autoSuggestion: "promoted",
+  manualIntervention: false,
+};
+
+const validCandidate: PromotionOverrideCandidate = {
+  status: "PROMOTE",
+  nextClass: "6",
+  nextSection: "A",
+  sourceClass: "5",
+  sourceSection: "A",
+  resultStatus: "complete",
+  promoted: true,
+  decision: validDecision,
+  teacherIsValid: true,
+  teacherTargetIsConfigured: true,
+  overrideTargetIsConfigured: true,
+  studentIsInSourceRoster: true,
+  sessionIsActive: true,
+  adminExecuted: false,
+};
+
+const currentDecision = {
+  ...validDecision,
+  lockedAt: "2026-10-09T10:00:00.000Z",
+  processedByTeacherId: 31,
+};
+
+const finalDecisionInput = {
+  sourceClass: "5",
+  sourceSection: "A",
+  resultStatus: "complete" as const,
+  promoted: true,
+  decision: currentDecision,
+  teacherIsValid: true,
+  teacherTargetIsConfigured: true,
+  overrideTargetIsConfigured: true,
+  studentIsInSourceRoster: true,
+  sessionIsActive: true,
+  adminExecuted: false,
+  proposal: null,
+};
+
+function proposal(overrides: Record<string, unknown> = {}) {
+  return {
+    eventId: 901,
+    status: "RETAIN",
+    nextClass: "5",
+    nextSection: "A",
+    reason: "Reviewed and retained by the Principal.",
+    actorId: 70,
+    actorRole: "admin",
+    createdAt: new Date("2026-10-09T10:05:00.000Z"),
+    originalTeacherRecommendation: {
+      decision: "promoted",
+      targetClass: "6",
+      targetSection: "A",
+      autoSuggestion: "promoted",
+      manualIntervention: false,
+      locked: true,
+      lockedAt: "2026-10-09T10:00:00.000Z",
+      processedByTeacherId: 31,
+    },
+    ...overrides,
+  };
+}
+
+function rejectCode(run: () => unknown, code: string, statusCode: number) {
+  assert.throws(run, error => {
+    assert.equal((error as any).code, code);
+    assert.equal((error as any).statusCode, statusCode);
+    return true;
+  });
+}
+
+test("1. Active Admin in the school is authorized", () => {
+  assert.doesNotThrow(() => assertPromotionOverrideActorRecord(
+    { id: 70, role: "admin" },
+    11,
+    { id: 70, schoolId: 11, isActive: true, role: "admin" },
+  ));
+});
+
+test("2. Active Support Staff with the parent Exam Controller grant is authorized", () => {
+  assert.doesNotThrow(() => assertPromotionOverrideActorRecord(
+    { id: 7, role: "support_staff" },
+    11,
+    { id: 7, schoolId: 11, isActive: true, allowedModules: ["exam-controller"] },
+  ));
+});
+
+test("3. Support Staff without the Exam Controller grant is rejected", () => {
+  rejectCode(() => assertPromotionOverrideActorRecord(
+    { id: 7, role: "support_staff" },
+    11,
+    { id: 7, schoolId: 11, isActive: true, allowedModules: ["attendance-overview"] },
+  ), "PROMOTION_OVERRIDE_ACTOR_INVALID", 403);
+});
+
+test("4. Inactive Support Staff is rejected", () => {
+  rejectCode(() => assertPromotionOverrideActorRecord(
+    { id: 7, role: "support_staff" },
+    11,
+    { id: 7, schoolId: 11, isActive: false, allowedModules: ["exam-controller"] },
+  ), "PROMOTION_OVERRIDE_ACTOR_INVALID", 403);
+});
+
+test("5. Unauthenticated session cannot resolve an override actor", () => {
+  assert.equal(promotionOverrideActorFromSession({}), null);
+  assert.equal(promotionOverrideActorFromSession({ userRole: "admin", userId: 0 }), null);
+});
+
+test("6. Actor record from a different school is rejected", () => {
+  rejectCode(() => assertPromotionOverrideActorRecord(
+    { id: 70, role: "admin" },
+    11,
+    { id: 70, schoolId: 12, isActive: true, role: "admin" },
+  ), "PROMOTION_OVERRIDE_ACTOR_INVALID", 403);
+});
+
+test("7. A mixed-session batch is rejected", () => {
+  assert.throws(() => assertPromotionOverrideBatch([
+    { schoolId: 11, sessionId: 42, studentId: 7, examType: "Term 2", class: "5", section: "A" },
+    { schoolId: 11, sessionId: 44, studentId: 8, examType: "Term 2", class: "5", section: "A" },
+  ]), error => (error as any).code === "MIXED_PROMOTION_COHORT");
+});
+
+test("8. Archived-session override is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    sessionIsActive: false,
+  }), "SESSION_NOT_WRITABLE", 403);
+});
+
+test("9. Student outside the exact selected-session roster is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    studentIsInSourceRoster: false,
+  }), "PROMOTION_STUDENT_NOT_IN_SOURCE_ROSTER", 409);
+});
+
+test("10. Missing Teacher ledger is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    decision: undefined,
+  }), "PROMOTION_DECISION_INVALID", 409);
+});
+
+test("11. Unlocked Teacher ledger is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    decision: { ...validDecision, locked: false },
+  }), "PROMOTION_DECISION_INVALID", 409);
+});
+
+test("12. Stale Teacher recommendation is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    decision: { ...validDecision, autoSuggestion: "retained", manualIntervention: true },
+  }), "PROMOTION_DECISION_CONFLICT", 409);
+});
+
+test("13. Incomplete applicable result is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    resultStatus: "incomplete",
+    promoted: null,
+  }), "PROMOTION_RESULT_INCOMPLETE", 409);
+});
+
+test("14. Valid Promote override passes current readiness checks", () => {
+  assert.doesNotThrow(() => validatePromotionOverrideCandidate(validCandidate));
+});
+
+test("15. Valid Retain override must remain in the source placement", () => {
+  assert.doesNotThrow(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    status: "RETAIN",
+    nextClass: "5",
+  }));
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    status: "RETAIN",
+    nextClass: "6",
+  }), "PROMOTION_OVERRIDE_TARGET_INVALID", 400);
+});
+
+test("16. Blank and whitespace-only reasons are rejected", () => {
+  for (const reason of ["", "   \n\t"]) {
+    rejectCode(() => requirePromotionOverrideReason(reason), "PROMOTION_OVERRIDE_REASON_REQUIRED", 400);
+  }
+});
+
+test("17. Audit actor identity is derived from the authenticated session", () => {
+  assert.deepEqual(
+    promotionOverrideActorFromSession({ userRole: "admin", userId: 70, staffId: 999 }),
+    { id: 70, role: "admin" },
+  );
+  assert.deepEqual(
+    promotionOverrideActorFromSession({ userRole: "support_staff", userId: -7, staffId: 7 }),
+    { id: 7, role: "support_staff" },
+  );
+  assert.equal(
+    promotionOverrideActorFromSession({ userRole: "support_staff", userId: 70, staffId: 7 }),
+    null,
+  );
+});
+
+test("a missing or cleared audited proposal leaves the locked Teacher recommendation authoritative", () => {
+  const noProposal = resolvePromotionFinalDecision(finalDecisionInput);
+  const clearedProposal = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    proposal: null,
+    legacyOverride: { overrideStatus: "GRACE_PASS", nextClass: "5", nextSection: "A" },
+  });
+  assert.equal(noProposal.readiness, "ready");
+  assert.deepEqual(noProposal.finalDecision, { status: "PROMOTE", nextClass: "6", nextSection: "A" });
+  assert.deepEqual(clearedProposal.finalDecision, noProposal.finalDecision);
+  assert.equal(clearedProposal.overrideApplied, false);
+});
+
+test("the audited Retain proposal takes precedence over a Teacher Promote recommendation", () => {
+  const result = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    proposal: proposal(),
+  });
+  assert.equal(result.readiness, "ready");
+  assert.deepEqual(result.teacherRecommendation, { status: "PROMOTE", nextClass: "6", nextSection: "A" });
+  assert.deepEqual(result.finalDecision, { status: "RETAIN", nextClass: "5", nextSection: "A" });
+  assert.equal(result.overrideApplied, true);
+});
+
+test("the audited Promote proposal takes precedence over a Teacher Retain recommendation", () => {
+  const retainedTeacher = {
+    decision: "retained",
+    targetClass: "5",
+    targetSection: "A",
+    autoSuggestion: "promoted",
+    manualIntervention: true,
+    locked: true,
+    lockedAt: "2026-10-09T10:00:00.000Z",
+    processedByTeacherId: 31,
+  };
+  const result = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    promoted: true,
+    decision: retainedTeacher,
+    proposal: proposal({
+      status: "PROMOTE",
+      nextClass: "6",
+      originalTeacherRecommendation: retainedTeacher,
+    }),
+  });
+  assert.equal(result.readiness, "ready");
+  assert.deepEqual(result.teacherRecommendation, { status: "RETAIN", nextClass: "5", nextSection: "A" });
+  assert.deepEqual(result.finalDecision, { status: "PROMOTE", nextClass: "6", nextSection: "A" });
+});
+
+test("a stale proposal cannot silently fall back to the Teacher recommendation", () => {
+  const result = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    decision: { ...currentDecision, targetSection: "B" },
+    proposal: proposal(),
+  });
+  assert.equal(result.readiness, "blocked");
+  assert.equal(result.code, "PROMOTION_OVERRIDE_STALE");
+  assert.equal(result.finalDecision, null);
+});
+
+test("an archived source session remains non-executable", () => {
+  const result = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    sessionIsActive: false,
+    proposal: null,
+  });
+  assert.equal(result.readiness, "blocked");
+  assert.equal(result.code, "SESSION_NOT_WRITABLE");
+  assert.equal(result.finalDecision, null);
+});
+
+test("legacy records cannot authorize execution and conflicting legacy data blocks an audited proposal", () => {
+  const result = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    proposal: proposal(),
+    legacyOverride: { overrideStatus: "GRACE_PASS", nextClass: "5", nextSection: "A" },
+  });
+  assert.equal(result.readiness, "blocked");
+  assert.equal(result.code, "PROMOTION_OVERRIDE_LEGACY_CONFLICT");
+  assert.equal(result.finalDecision, null);
+});
+
+test("incomplete results and missing or invalid locked Teacher decisions stay Pending or Blocked", () => {
+  const incomplete = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    resultStatus: "incomplete",
+    promoted: null,
+    proposal: proposal(),
+  });
+  assert.equal(incomplete.readiness, "pending");
+  assert.equal(incomplete.finalDecision, null);
+
+  const missingLedger = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    decision: undefined,
+    proposal: null,
+  });
+  assert.equal(missingLedger.readiness, "pending");
+
+  const invalidTeacher = resolvePromotionFinalDecision({
+    ...finalDecisionInput,
+    teacherIsValid: false,
+    proposal: null,
+  });
+  assert.equal(invalidTeacher.readiness, "blocked");
+});
+
+test("proposal reason, actor, and configured destination are mandatory at resolution time", () => {
+  for (const invalidProposal of [
+    proposal({ reason: "   " }),
+    proposal({ actorId: null }),
+    proposal({ nextClass: "99" }),
+  ]) {
+    const result = resolvePromotionFinalDecision({
+      ...finalDecisionInput,
+      overrideTargetIsConfigured: invalidProposal.nextClass !== "99",
+      proposal: invalidProposal as any,
+    });
+    assert.notEqual(result.readiness, "ready");
+    assert.equal(result.finalDecision, null);
+  }
+});
+
+test("18. Web proposals are audit events written inside the database transaction", () => {
+  const source = readFileSync(join(process.cwd(), "artifacts/api-server/src/storage.ts"), "utf8");
+  const start = source.indexOf("async bulkUpsertPromotionOverrides(");
+  const end = source.indexOf("\n  async deleteAllPromotionOverrides", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const saveBody = source.slice(start, end);
+  assert.match(saveBody, /await db\.transaction\(async \(tx\)/);
+  assert.match(saveBody, /await writePromotionOverrideAudit\(tx,/);
+  assert.doesNotMatch(saveBody, /tx\.(?:insert|update|delete)\(promotionOverrides/);
+  assert.match(
+    source,
+    /selectedOverride:\s*input\.actionType === "PROMOTION_OVERRIDE_PROPOSAL_CLEARED"\s*\?\s*null/,
+  );
+});
+
+test("19. Audit insertion failure aborts the transaction before a proposal becomes visible", async () => {
+  let visibleProposal = false;
+  const stagedEvents: unknown[] = [];
+  const transaction = async (work: (tx: { insertAuditEvent: (event: unknown) => Promise<void> }) => Promise<void>) => {
+    const tx = {
+      insertAuditEvent: async (event: unknown) => {
+        stagedEvents.push(event);
+        throw new Error("audit insert failed");
+      },
+    };
+    await work(tx);
+    visibleProposal = stagedEvents.length > 0;
+  };
+  await assert.rejects(transaction(async tx => {
+    await tx.insertAuditEvent({ kind: "promotion-override-proposal" });
+  }), /audit insert failed/);
+  assert.equal(visibleProposal, false);
+});
+
+test("20. Executed Student override mutation is rejected", () => {
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    adminExecuted: true,
+  }), "PROMOTION_ALREADY_EXECUTED", 409);
+});
+
+test("21. New Grace writes are rejected without rewriting existing Grace data", () => {
+  const legacyGrace = {
+    overrideStatus: "GRACE_PASS",
+    nextClass: "6",
+    nextSection: "A",
+  };
+  const snapshot = { ...legacyGrace };
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    status: "GRACE_PASS",
+  }), "PROMOTION_OVERRIDE_OUTCOME_INVALID", 400);
+  assert.deepEqual(legacyGrace, snapshot);
+  const webSource = readFileSync(
+    join(process.cwd(), "artifacts/benius-web/src/pages/admin-modules/exam-controller.tsx"),
+    "utf8",
+  );
+  assert.match(webSource, /ov\.overrideStatus === "GRACE_PASS"\s*\?\s*"grace_pass"/);
+  assert.match(webSource, /ov\.rawStatus === "GRACE_PASS"\s*\?\s*"Legacy Grace"/);
+});
+
+test("22. A legacy override cannot bypass a missing locked Teacher decision", () => {
+  const legacyGrace = { overrideStatus: "GRACE_PASS" };
+  rejectCode(() => validatePromotionOverrideCandidate({
+    ...validCandidate,
+    decision: undefined,
+  }), "PROMOTION_DECISION_INVALID", 409);
+  assert.equal(legacyGrace.overrideStatus, "GRACE_PASS");
+});
+
+test("23. Readiness validation leaves the Teacher ledger snapshot unchanged", () => {
+  const decision = Object.freeze({ ...validDecision });
+  validatePromotionOverrideCandidate({ ...validCandidate, decision });
+  assert.deepEqual(decision, validDecision);
+});
+
+test("24. Web execution resolves only audited proposals in its trusted server mode", () => {
+  const source = readFileSync(join(process.cwd(), "artifacts/api-server/src/storage.ts"), "utf8");
+  const start = source.indexOf("async executePromotionTransaction(");
+  assert.notEqual(start, -1);
+  const end = source.indexOf("\n  async ", start + 1);
+  const executeBody = source.slice(start, end === -1 ? undefined : end);
+  assert.match(executeBody, /options\.mode === "web-audited"/);
+  assert.match(executeBody, /loadLatestPromotionOverrideAuditEvents\(tx, overrideScope/);
+  assert.match(executeBody, /resolvePromotionFinalDecision\(/);
+  const mobileRoutes = readFileSync(
+    join(process.cwd(), "artifacts/api-server/src/mobile-admin-module-routes.ts"),
+    "utf8",
+  );
+  const mobileExecutionStart = mobileRoutes.indexOf('"/api/mobile/admin/modules/exam-controller/execute"');
+  const mobileExecutionEnd = mobileRoutes.indexOf('"/api/mobile/admin/modules/exam-controller/', mobileExecutionStart + 20);
+  const mobileExecution = mobileRoutes.slice(mobileExecutionStart, mobileExecutionEnd);
+  assert.match(mobileExecution, /storage\.executePromotionTransaction\(/);
+  assert.doesNotMatch(mobileExecution, /mode:\s*"web-audited"|getPromotionOverridesWithAudit/);
+});
+
+test("25. Mobile routes and raw override reader remain unchanged for legacy consumers", () => {
+  const mobileRoutes = readFileSync(join(process.cwd(), "artifacts/api-server/src/mobile-admin-module-routes.ts"), "utf8");
+  const storageSource = readFileSync(join(process.cwd(), "artifacts/api-server/src/storage.ts"), "utf8");
+  assert.match(mobileRoutes, /storage\.getExamAggregated\(/);
+  assert.doesNotMatch(mobileRoutes, /getPromotionOverridesWithAudit/);
+  const start = storageSource.indexOf("async getPromotionOverrides(");
+  const end = storageSource.indexOf("\n  async getPromotionOverridesWithAudit", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  assert.match(storageSource.slice(start, end), /from\(promotionOverrides\)/);
+});
+
+test("26. Web preview and selection use the server-resolved final decision", () => {
+  const webSource = readFileSync(
+    join(process.cwd(), "artifacts/benius-web/src/pages/admin-modules/exam-controller.tsx"),
+    "utf8",
+  );
+  const routeSource = readFileSync(join(process.cwd(), "artifacts/api-server/src/teacher-routes.ts"), "utf8");
+  assert.match(webSource, /readiness: student\.finalDecision\?\.readiness/);
+  assert.match(webSource, /readinessForStudent\(student\) === "ready"/);
+  assert.match(webSource, /const resolved = s\.finalDecision!\.finalDecision!/);
+  assert.match(routeSource, /actor,\s*\{ mode: "web-audited" \}/);
+});
+
+const executedEvidence = {
+  overrideApplied: true,
+  teacherRecommendation: { status: "PROMOTE" as const, nextClass: "6", nextSection: "A" },
+  proposal: { status: "RETAIN" as const, nextClass: "5", nextSection: "A" },
+  finalDecision: { status: "RETAIN" as const, nextClass: "5", nextSection: "A" },
+  historyDestination: { className: "5", sectionName: "A" },
+  auditTargetSessionId: 82,
+  historyTargetSessionId: 82,
+};
+
+test("executed evidence accepts matching applied Retain and Promote overrides", () => {
+  assert.equal(executedPromotionEvidenceMatches(executedEvidence), true);
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    proposal: { status: "PROMOTE", nextClass: "6", nextSection: "A" },
+    finalDecision: { status: "PROMOTE", nextClass: "6", nextSection: "A" },
+    historyDestination: { className: "6", sectionName: "A" },
+  }), true);
+});
+
+test("executed evidence rejects verdict, destination, and session conflicts", () => {
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    finalDecision: { status: "PROMOTE", nextClass: "5", nextSection: "A" },
+  }), false);
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    finalDecision: { status: "RETAIN", nextClass: "6", nextSection: "A" },
+  }), false);
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    historyTargetSessionId: 83,
+  }), false);
+});
+
+test("executed evidence without override must match the locked Teacher recommendation", () => {
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    overrideApplied: false,
+    proposal: null,
+    finalDecision: executedEvidence.teacherRecommendation,
+    historyDestination: { className: "6", sectionName: "A" },
+  }), true);
+  assert.equal(executedPromotionEvidenceMatches({
+    ...executedEvidence,
+    overrideApplied: false,
+    proposal: null,
+  }), false);
+});

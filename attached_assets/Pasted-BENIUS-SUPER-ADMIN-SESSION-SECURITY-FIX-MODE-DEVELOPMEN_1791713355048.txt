@@ -1,0 +1,48 @@
+BENIUS — SUPER ADMIN SESSION SECURITY FIX
+
+MODE: DEVELOPMENT CODE IMPLEMENTATION ONLY
+
+The read-only audit confirmed that leaving /super-master does not revoke the existing Super Admin session.
+
+I approve implementing the smallest safe security correction.
+
+REQUIREMENTS:
+
+1. When navigating from the Super Admin area to any non-Super Admin application route, revoke the Super Admin session using the existing authenticated, CSRF-protected logout endpoint.
+
+2. Clear Super Admin session and school-list caches when leaving.
+
+3. Returning to /super-master after leaving must require fresh authentication.
+
+4. Refreshing while still inside /super-master must NOT automatically log out. However, the server session must be revalidated before displaying sensitive information.
+
+5. After logout, browser Back or Forward must not reveal cached Super Admin dashboard data.
+
+6. Apply appropriate no-store cache headers to sensitive Super Admin responses and revalidate restored pages.
+
+7. Preserve backend session expiry, revocation, CSRF protection, and Super Admin authorization.
+
+8. Do not modify Principal, Teacher, or Student authentication.
+
+9. Do not weaken school/tenant isolation or Academic Session protections.
+
+10. Do not treat client-side route changes as proof that server logout succeeded. Handle failed logout safely and do not expose protected content.
+
+11. Add focused tests covering navigation away, return, refresh, logout, browser history, and unauthorized access.
+
+12. Run focused tests, API/Web builds, and git diff --check.
+
+IMPORTANT:
+If reliable logout on route exit cannot be implemented without unintended effects, STOP and explain the issue rather than applying an unsafe workaround.
+
+STRICT RESTRICTIONS:
+
+- No database migrations or manual database changes.
+- No school creation or deletion.
+- No Production deployment.
+- No Mobile changes.
+- No workflow restarts without separate approval.
+
+Report the changed files, verification results, and whether an API restart is required.
+
+STOP after implementation and wait for approval.

@@ -1,0 +1,31 @@
+modules = ["nodejs-20", "web", "python-base-3.13", "postgresql-16"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.development]
+BENIUS_STUDENT_COMPLAINT_READ_RECEIPTS_ENABLED = "true"
+BENIUS_STUDENT_COMPLAINT_READ_RECEIPTS_MIGRATION_APPLIED = "true"
+BENIUS_STUDENT_COMPLAINT_REPLY_AWARE_ENABLED = "true"
+BENIUS_STUDENT_COMPLAINT_REPLY_AWARE_MIGRATION_APPLIED = "true"

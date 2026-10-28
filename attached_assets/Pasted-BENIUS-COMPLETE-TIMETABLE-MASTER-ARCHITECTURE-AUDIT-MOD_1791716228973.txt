@@ -1,0 +1,80 @@
+BENIUS — COMPLETE TIMETABLE MASTER ARCHITECTURE AUDIT
+
+MODE: STRICT READ-ONLY
+
+OBJECTIVE:
+
+Audit the ENTIRE Principal/Admin → Timetable Master module and determine whether its architecture is Academic Session–based, school-global, or mixed.
+
+Do not focus only on the current HTTP 403 error.
+
+AUDIT ALL COMPONENTS:
+
+1. Schedule Grid
+2. Bell Structure / Period Structure
+3. Timetable Publish
+4. Teacher assignments and allocations
+5. Subject and class/section mappings
+6. Timetable creation, editing, saving, and deletion
+7. Published timetable visibility in Teacher and Student portals
+8. Timetable history and previous Academic Sessions
+9. Timetable-related school-wide settings
+10. Any related API endpoints, database tables, and shared configuration
+
+FOR EVERY COMPONENT, IDENTIFY:
+
+- Whether data is stored globally or by Academic Session ID.
+- Whether school_id is enforced.
+- Whether class and section are included where applicable.
+- Whether frontend requests pass the correct selected Academic Session.
+- Whether backend reads and writes enforce the intended session.
+- Whether archived Academic Sessions are read-only.
+- Whether activating a new Academic Session changes or overwrites old timetable data.
+- Whether Teacher and Student portals show the correct session's timetable.
+- Whether any shared/global data can unintentionally affect historical timetable records.
+- Whether copying timetable configuration between sessions is supported and safe.
+
+IMPORTANT:
+
+Verify actual code, database schema, API routes, and data access methods. Do not rely on comments or module metadata alone.
+
+INVESTIGATE THE EXISTING 403 ERROR:
+
+GET /api/timetable/structure?class=1
+
+Determine whether the session mismatch is an isolated request-state issue or evidence of a wider timetable architecture inconsistency.
+
+RECOMMENDED ARCHITECTURE TO EVALUATE:
+
+- All academic timetable records should belong to a specific school and Academic Session.
+- Historical timetables should remain preserved and read-only.
+- New Academic Sessions should start with independent timetable records.
+- School-wide reference settings may remain global where appropriate.
+- No timetable data should leak between schools.
+- Do not automatically copy or overwrite historical timetable data.
+
+FINAL REPORT:
+
+Provide a clear table:
+
+Component | Current Architecture | Recommended Architecture | Gap | Risk | Required Change
+
+Then explain:
+
+1. Is Timetable Master currently fully session-based, global, or mixed?
+2. Which components are correctly designed?
+3. Which components need correction?
+4. What is the safest and simplest architecture for BENIUS?
+5. Can the 403 issue be fixed independently?
+6. Which changes are essential versus optional?
+7. Are database migrations necessary?
+
+STRICT RESTRICTIONS:
+
+- No code modifications.
+- No database changes or migrations.
+- No workflow restarts.
+- No Production or Mobile changes.
+- No automatic implementation.
+
+STOP after the audit and wait for approval.

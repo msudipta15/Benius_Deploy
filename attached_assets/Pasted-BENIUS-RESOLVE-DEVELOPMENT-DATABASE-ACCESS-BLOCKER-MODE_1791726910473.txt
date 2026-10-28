@@ -1,0 +1,68 @@
+BENIUS — RESOLVE DEVELOPMENT DATABASE ACCESS BLOCKER
+
+MODE: READ-ONLY INVESTIGATION
+
+We have repeatedly failed to verify the Development API database because the general shell environment may differ from the running API workflow.
+
+Do not repeat the same general-shell check.
+
+OBJECTIVE:
+Identify a safe way to run a read-only database identity query using the actual running Development API workflow's database connection.
+
+STEP 1 — WORKFLOW INSPECTION
+
+Inspect the Development API workflow configuration and process environment metadata.
+
+Determine:
+- How the Development API receives DATABASE_URL.
+- Whether the API workflow and general shell share the same database binding.
+- Whether an authorized command can execute within the Development API workflow environment.
+- Whether the running API process can perform a read-only identity check without restarting.
+
+Do not print environment-variable values, secrets, or credentials.
+
+STEP 2 — SAFE ACCESS DECISION
+
+If the platform provides an authorized mechanism to execute a read-only query through the running API's existing database connection, identify and use it.
+
+If the mechanism requires changing code, restarting a workflow, accessing another environment, or exposing secrets, STOP and request approval.
+
+Do not assume NODE_ENV alone proves database identity.
+
+STEP 3 — IDENTITY VERIFICATION
+
+Only when the actual Development API connection is established:
+
+- Obtain a safe database identity fingerprint.
+- Compare it with the managed Development SQL Console.
+- Account for connection proxies and pooling.
+- Report VERIFIED SAME, VERIFIED DIFFERENT, or INCONCLUSIVE.
+
+STEP 4 — HISTORICAL RECORDS
+
+Only after a verified match, use SELECT-only queries to inspect:
+
+School ID: 41
+Student DSID: LLS-0003
+Academic Session: new 2028
+
+Determine:
+- Teacher recommendation.
+- Principal saved override.
+- Executed Principal verdict.
+- Academic history destination.
+- Whether these records agree.
+
+STRICT RESTRICTIONS:
+
+- No code modifications.
+- No database writes or migrations.
+- No workflow restarts.
+- No Production or Mobile changes.
+- No promotion execution.
+- No Academic Session modifications.
+- No credentials or sensitive environment values in logs.
+
+If safe access is unavailable, report the exact platform limitation and the minimum additional authorization required.
+
+STOP after reporting.

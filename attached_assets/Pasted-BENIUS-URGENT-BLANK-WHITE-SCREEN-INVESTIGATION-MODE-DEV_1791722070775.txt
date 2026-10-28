@@ -1,0 +1,75 @@
+BENIUS — URGENT BLANK WHITE SCREEN INVESTIGATION
+
+MODE: DEVELOPMENT ONLY — READ-ONLY ROOT CAUSE INVESTIGATION
+
+ISSUE:
+
+BENIUS Development Preview at `/` remains completely white.
+
+The user has confirmed the blank screen persists despite refreshing.
+
+Previous investigation reported:
+- Development Web server: HTTP 200
+- Development API: HTTP 200
+- Frontend assets: HTTP 200
+- Earlier browser logs: "Maximum update depth exceeded"
+- No confirmed component responsible
+
+IMPORTANT:
+Do not conclude the application is healthy merely because HTTP requests return 200.
+
+OBJECTIVE:
+
+Identify why the BENIUS React application is not rendering in the user's Development Preview.
+
+INVESTIGATE:
+
+1. Inspect frontend runtime errors and the React component stack.
+2. Trace the "Maximum update depth exceeded" error to its source if it is reproducible.
+3. Inspect the root application rendering flow:
+   - main.tsx
+   - App.tsx
+   - Global providers
+   - Authentication context
+   - Academic Session context
+   - React Query providers
+   - Routing and redirect logic
+
+4. Check for:
+   - Infinite useEffect loops
+   - State updates during rendering
+   - Unstable effect dependencies
+   - Repeated navigation or redirects
+   - LocalStorage/sessionStorage state causing render loops
+   - Unhandled JavaScript exceptions
+
+5. Compare behavior in:
+   - Replit embedded Preview
+   - Direct Development URL
+   - Fresh unauthenticated browser context
+
+6. Determine whether the blank screen depends on existing browser storage or authentication state.
+
+7. Identify the exact component, file, and line responsible where evidence permits.
+
+8. Check recent relevant changes for a regression, but do not assume they caused it.
+
+FINAL REPORT:
+
+- Confirmed root cause or exact missing evidence.
+- Affected component and file.
+- Why the server returns 200 while the UI is blank.
+- Smallest safe correction.
+- Whether the issue affects only Development Preview or the application generally.
+- Tests required.
+
+STRICT RESTRICTIONS:
+
+- No code modifications.
+- No database changes or migrations.
+- No workflow restarts.
+- No Production or Mobile changes.
+- Do not clear browser storage or authentication sessions automatically.
+- Do not reset the project.
+
+STOP after reporting findings.

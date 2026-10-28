@@ -1,0 +1,62 @@
+BENIUS — SUPER ADMIN AUTHENTICATION PHASE 1
+
+MODE: DEVELOPMENT CODE IMPLEMENTATION ONLY
+
+Argon2id has now been successfully rebuilt and verified against the Development API's Node.js 20.20.0 runtime.
+
+I approve proceeding with the previously agreed Super Admin authentication implementation.
+
+REQUIREMENTS:
+
+1. Prepare the separate database tables:
+   - super_admin_accounts
+   - super_admin_sessions
+   - super_admin_login_attempts
+
+2. Prepare an additive database migration, but DO NOT execute it.
+
+3. Implement `/super-master/login` with email and password authentication.
+
+4. Implement secure Super Admin sessions, logout, session expiry, revocation, and database-backed login throttling.
+
+5. Do not create a registration or signup page.
+
+6. Super Admin accounts must be created manually in PostgreSQL using email and Argon2id password hashes.
+
+7. Prepare a local-only password-hash generation utility that does not expose plaintext passwords.
+
+8. Protect `/super-master` and school-management APIs with server-side Super Admin authentication.
+
+9. Fix the Academic Session header conflict for authorized Super Admin school-management operations without weakening existing protections.
+
+10. Preserve Principal, Teacher and Student authentication unchanged.
+
+11. Include CSRF protection for state-changing Super Admin operations.
+
+12. Add focused security and regression tests.
+
+13. Run non-mutating tests, API/Web builds, and git diff --check.
+
+STRICT RESTRICTIONS:
+
+- Do not execute database migrations.
+- Do not create Super Admin accounts.
+- Do not modify existing school records.
+- Do not execute school deletion.
+- Do not restart workflows.
+- Do not deploy Production.
+- Do not modify Mobile source code.
+- Do not change environment variables.
+
+If the implementation requires an unapproved database operation or architectural change, STOP and report.
+
+FINAL REPORT:
+
+- Files created and modified.
+- Migration prepared.
+- Authentication implementation status.
+- Security tests and build results.
+- Any unresolved risks.
+- Exact next steps.
+
+STOP after Phase 1 and wait for my approval before applying migrations or restarting.

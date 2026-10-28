@@ -1,0 +1,63 @@
+BENIUS — DEVELOPMENT DATABASE IDENTITY VERIFICATION
+
+MODE: READ-ONLY DATABASE INSPECTION
+
+I approve read-only database identity and metadata queries only.
+
+OBJECTIVE:
+Confirm that the database used by the running Development API is the same intended Development PostgreSQL database targeted by Replit's migration/database tools.
+
+STEP 1 — CONNECTION IDENTITY
+
+Using the Development API's configured DATABASE_URL, establish a read-only database connection.
+
+Separately inspect the Replit-managed Development database connection.
+
+Compare safe database identity information, such as:
+- Database name
+- PostgreSQL server address identity, without credentials
+- Server port
+- Current database and schema
+- A suitable stable database/server identifier, if safely available
+
+Do not print DATABASE_URL or expose passwords, tokens, or secrets.
+
+If both connections cannot be positively identified as the same intended Development database, STOP.
+
+STEP 2 — MIGRATION PREFLIGHT
+
+Only after confirming database identity, inspect PostgreSQL metadata for:
+
+- super_admin_accounts
+- super_admin_sessions
+- super_admin_login_attempts
+- All indexes, sequences, and constraints introduced by migration 021
+
+Inspect the actual migration tracking table to determine whether migration 021 has already been applied.
+
+Use SELECT and PostgreSQL metadata queries only.
+
+STEP 3 — REPORT
+
+Report:
+
+1. Development API database identity: CONFIRMED / NOT CONFIRMED
+2. Replit database tool matches API database: YES / NO
+3. Super Admin tables already exist: YES / NO
+4. Migration 021 already applied: YES / NO / UNKNOWN
+5. Object-name conflicts: YES / NO
+6. Migration 021 safe to execute: YES / NO
+7. Any unresolved risks
+
+STRICT RESTRICTIONS:
+
+- No database writes.
+- No migrations.
+- No account creation.
+- No changes to environment variables.
+- No workflow restarts.
+- No Production access or deployment.
+- No Mobile changes.
+- Do not expose connection strings or credentials.
+
+STOP after the read-only report and wait for approval.
