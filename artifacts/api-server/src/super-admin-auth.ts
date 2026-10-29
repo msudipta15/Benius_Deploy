@@ -30,9 +30,38 @@ const SESSION_COOKIE_OPTIONS = {
   maxAge: SUPER_ADMIN_SESSION_TTL_MS,
 };
 
+
 function requestHasSessionIndependentOrigin(req: Request): boolean {
-  return requestHasSameOrigin(req.get("origin"), req.get("host"));
+  const origin = req.get("origin");
+
+  if (requestHasSameOrigin(origin, req.get("host"))) {
+    return true;
+  }
+
+  if (!origin) return false;
+
+  const allowedOrigins = (
+    process.env.SUPER_ADMIN_ALLOWED_ORIGINS ?? ""
+  )
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  try {
+    const requestOrigin = new URL(origin).origin;
+
+    return allowedOrigins.some((allowedOrigin) => {
+      try {
+        return new URL(allowedOrigin).origin === requestOrigin;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
 }
+
 
 function requireSameOrigin(req: Request, res: Response): boolean {
   if (requestHasSessionIndependentOrigin(req)) return true;
