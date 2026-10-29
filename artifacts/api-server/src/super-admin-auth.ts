@@ -200,9 +200,16 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
       await pool.query("UPDATE super_admin_accounts SET last_login_at = now() WHERE id = $1", [account.id]);
       res.cookie(SUPER_ADMIN_SESSION_COOKIE, token, SESSION_COOKIE_OPTIONS);
       res.json({ id: Number(account.id), email: String(account.email), csrfToken });
-    } catch {
-      res.status(503).json({ message: "Unable to complete Super Admin login." });
-    }
+    } catch (error: unknown) {
+  console.error(
+    "[super-admin-login] Failed:",
+    error instanceof Error ? error.message : "Unknown error"
+  );
+
+  res.status(503).json({
+    message: "Unable to complete Super Admin login.",
+  });
+}
   });
 
   app.get("/api/super-admin/session", requireSuperAdmin, async (req, res): Promise<void> => {
