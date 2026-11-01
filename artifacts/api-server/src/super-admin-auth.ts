@@ -312,7 +312,21 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
             ),
           });
 
-          valid = await argon2.verify(storedHash, password);
+          try {
+  console.log("[argon2] Starting stored hash verification");
+
+  valid = await argon2.verify(storedHash, password);
+
+  console.log("[argon2] Stored hash verification result:", valid);
+} catch (error) {
+  console.error("[argon2] Stored hash verification exception:", error);
+  console.error("[argon2] Exception name:",
+    error instanceof Error ? error.name : "Unknown");
+  console.error("[argon2] Exception stack:",
+    error instanceof Error ? error.stack : "No stack");
+
+  throw error;
+}
         } else {
           await argon2.hash(password, {
             type: argon2.argon2id,
