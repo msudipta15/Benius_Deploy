@@ -268,24 +268,35 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
           [email],
         );
 
-        const account = accountResult.rows[0];
+                const account = accountResult.rows[0];
 
         loginStage = "verifying password";
 
-        const valid = account
-          ? await argon2.verify(
-              String(account.password_hash),
-              password,
-            )
-          : (
-              await argon2.hash(password, {
-                type: argon2.argon2id,
-              }),
-              false
-            );
+        let valid = false;
+
+        if (account) {
+          const storedHash = String(account.password_hash);
+
+          console.log("[super-admin-login] Hash diagnostics:", {
+            isString: typeof account.password_hash === "string",
+            length: storedHash.length,
+            prefix: storedHash.slice(0, 12),
+            isArgon2id: storedHash.startsWith("$argon2id$"),
+          });
+
+          valid = await argon2.verify(storedHash, password);
+        } else {
+          // Perform a dummy hash to reduce timing differences
+          await argon2.hash(password, {
+            type: argon2.argon2id,
+          });
+
+          valid = false;
+        }
 
         loginStage = "processing password result";
 
+        
         if (!valid || !account) {
           loginStage = "recording failed login attempt";
 
