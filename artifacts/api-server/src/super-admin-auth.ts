@@ -280,6 +280,9 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
           const testHash = await argon2.hash(testPassword, {
             type: argon2.argon2id,
           });
+          console.log("[argon2] Generated hash parameters:", {
+  parameters: testHash.split("$")[3],
+});
 
           const selfTest = await argon2.verify(
             testHash,
