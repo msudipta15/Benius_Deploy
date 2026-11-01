@@ -274,19 +274,43 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
 
         let valid = false;
 
+        // Test whether Argon2 works in the deployed environment
+        try {
+          const testPassword = "argon2-runtime-self-test";
+          const testHash = await argon2.hash(testPassword, {
+            type: argon2.argon2id,
+          });
+
+          const selfTest = await argon2.verify(
+            testHash,
+            testPassword,
+          );
+
+          console.log("[argon2] Runtime self-test:", selfTest);
+        } catch (error) {
+          console.error("[argon2] Runtime self-test failed:", error);
+          throw error;
+        }
+
         if (account) {
           const storedHash = String(account.password_hash);
+          const parts = storedHash.split("$");
 
-          console.log("[super-admin-login] Hash diagnostics:", {
-            isString: typeof account.password_hash === "string",
-            length: storedHash.length,
-            prefix: storedHash.slice(0, 12),
-            isArgon2id: storedHash.startsWith("$argon2id$"),
+          const parameters = parts[3] ?? "";
+          const parameterEntries = parameters.split(",");
+
+          console.log("[super-admin-login] Hash structure:", {
+            segmentCount: parts.length,
+            algorithm: parts[1],
+            version: parts[2],
+            parameters,
+            parametersValid: parameterEntries.every(
+              (entry) => /^[a-zA-Z0-9_]+=-?\d+$/.test(entry),
+            ),
           });
 
           valid = await argon2.verify(storedHash, password);
         } else {
-          // Perform a dummy hash to reduce timing differences
           await argon2.hash(password, {
             type: argon2.argon2id,
           });
