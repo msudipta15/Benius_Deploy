@@ -298,7 +298,17 @@ export function registerSuperAdminAuthRoutes(app: Express): void {
         }
 
         if (account) {
-          const storedHash = String(account.password_hash);
+          const storedHash = String(account.password_hash).replace(/\s+/g, "");
+          const hashFormatValid =
+  /^\$argon2id\$v=19\$m=\d+,p=\d+,t=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+$/.test(
+    storedHash
+  );
+
+console.log("[argon2] Normalized hash format valid:", hashFormatValid);
+
+if (!hashFormatValid) {
+  throw new Error("Stored Super Admin password hash has invalid format.");
+}
           const parts = storedHash.split("$");
 
           const parameters = parts[3] ?? "";
