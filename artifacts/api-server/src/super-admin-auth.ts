@@ -328,6 +328,24 @@ console.log("[argon2] Exact parameter inspection:", {
   ).map((char) => char.charCodeAt(0)),
 });
 
+const hashParts = storedHash.split("$");
+
+const hashFormatValid =
+  /^\$argon2id\$v=19\$m=\d+,p=\d+,t=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+$/.test(
+    storedHash
+  );
+
+console.log("[argon2] Complete hash validation:", {
+  formatValid: hashFormatValid,
+  segmentCount: hashParts.length,
+  algorithm: hashParts[1],
+  version: hashParts[2],
+  parameters: hashParts[3],
+  saltLength: hashParts[4]?.length,
+  digestLength: hashParts[5]?.length,
+  hasWhitespace: /\s/.test(storedHash),
+});
+
 
   valid = await argon2.verify(storedHash, password);
 
